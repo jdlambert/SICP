@@ -1,13 +1,13 @@
 ; CHAPTER ONE: BUILDING ABSTRACTIONS WITH PROCEDURES
 
-; Revisit later 1.13, 1.14, 1.1.5
+; Revisit later: 13-15
 
 ; SECTION 1.1: The Elements of Programming
 
 ; 1. Just a bit of reading of scheme expressions, nothing special and
 ;    meaningless out of context, so not included here.
 
-; 2. Just conversion of a mathematical expression to a Scheme expression: 
+; 2. Conversion of a mathematical expression to a Scheme expression: 
 
 (/ (+ 5 4 (- 2 (- 3 (+ 6 (/ 4 5))))) (* 3 (- 6 2) (- 2 7))) 
 
@@ -64,7 +64,7 @@
 ; then only evaluates the 'then' or 'else' clause based on the predicate's truth value.
 
 ; 7. Improving 'good-enough' metric:
-; I simply changed 'good-enough' to use the previous guess rather than the current guess.
+; I simply changed 'good-enough' to be a function of the previous guess and the current guess, instead of just the current guess.
 
 (define (improved-sqrt-iter guess x)
   (define (iter guess last-guess)
@@ -78,7 +78,6 @@
   (improved-sqrt-iter 1.0 x))
 
 (define fractional-target 0.000001) 
-; Even with such accuracy, the process is imperceptibly fast.
 
 (define (improved-good-enough? guess last-guess)
   (< (unsigned-fractional-diff guess last-guess) fractional-target))
@@ -158,8 +157,8 @@
 ; -> 65536
 
 (define (f n) (A 0 n)) ; f(n) = 2*n
-(define (g n) (A 1 n)) ; f(n) = 2^n
-(define (h n) (A 2 n)) ; f(n) = 2^2^2^...^2, with n operations. I just looked up the name of this operation: 'tetration'.
+(define (g n) (A 1 n)) ; g(n) = 2^n
+(define (h n) (A 2 n)) ; h(n) = 2^2^2^...^2, with n operations. I just looked up the name of this operation: 'tetration'.
 
 ; (A 2 n) [n > 1] = (A 1 (A 2 (- 1 n))
 ; So h(n) = 2^(h(n-1))
@@ -230,17 +229,89 @@
 (define (fib n)
   (define (fib-iter a b p q count)
     (cond ((= count 0) b)
-          ((even? count) (fib-iter a b (next-p a b p q) (next-q a b p q) (/ count 2)))
+          ((even? count) (fib-iter a b (next-p p q) (next-q p q) (/ count 2)))
           (else (fib-iter (+ (* b q) (* a q) (* a p))
                           (+ (* b p) (* a q))
                           p
-                          q))))
-  (define (next-p a b p q)
-    )
+                          q
+			  (- count 1)))))
+  (define (next-p p q)
+    (+ (* p p) (* q q)))
+  (define (next-q p q)
+    (+ (* 2 p q) (* q q)))
   (fib-iter 1 0 0 1 n))
 
-; The challenge in the above problem is finding a way to map the pair (p,q) to a new pair (p',q') representing two transformations
-; transforming a twice yields:  
-; (bp + aq)q + (bp + ap + aq)p + (bp + ap + aq)q
-; 2bpq + 2aqq + bpp + app + 2apq
-; (2qq + pp + 2pq)a + (2pq + pp)b
+; The challenge in the above problem is finding a way to map the pair (p,q) to a new pair (p',q') representing two consecutive transformations.
+
+; Here're the initial mappings:
+; a <- bq + a(q+p)
+; b <- bp + aq
+
+; Transforming b twice:
+; b <- (bp + aq)p + (bq + a(q+p))q
+
+; Collecting 'b's and 'a's:
+; b(pp + qq) + a(2pq + qq)
+
+; Transforming a twice:
+; a <- (bp + aq)q + (bq + a(q+p))(q+p)
+
+; Collecting 'b's and 'a's:
+; a <- b(2pq + qq) + a(qq + qq + pp + 2pq)
+
+; Since the last term is the sum of (2pq + qq) and (pp + qq), this is confirmation that a mapping from
+; (p,q) to (pp + qq, 2pq + qq) is a mapping from the base operation to a 'squared' operation
+
+; 20. Differences in process shape between normal-order and applicative-order evaluation:
+
+; Applicative order:
+; (gcd 206 40) -> (gcd 40 (remainder 206 40)) -> (gcd 40 6) -> (gcd 6 (remainder 40 6)) -> (gcd 6 4) -> (gcd 4 (remainder 6 4))
+; -> (gcd 4 2) -> (gcd 2 (remainder 4 2)) ->  (gcd 2 0) -> 2
+; This order uses 4 remainder operations
+
+; Normal order is a bit tricker:
+
+(gcd 206 40)
+
+(if (= 40 0)
+    206
+    (gcd 40 (remainder 206 40)))
+
+(if (= 6 0) ; FIRST REMAINDER
+    40
+    (gcd (remainder 206 40) (remainder 40 (remainder 206 40))))
+
+; Remainder calls inside gcd calls tend to get more and more nested, as their application is delayed.
+; Those inside predicates can be immediately applied.
+
+(if (= 4 0) ; SECOND AND THIRD
+    (remainder 206 40)
+    (gcd (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+
+(if (= 0 2) ; FOURTH THROUGH SEVENTH
+    (remainder 40 (remainder 206 40))
+    (gcd (remainder (remainder 206 40) (remainder 40 (remainder 206 40))) 
+	 (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))
+
+(if (= 0 2) ; EIGHTH THROUGH FOURTEENTH
+    2 ; FIFTEENTH THROUGH EIGHTEENTH, (gcd 206 40) evaluates to 2 after EIGHTEEN remainder operations in normal order
+    (gcd (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40))))
+         (remainder (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))
+                    (remainder (remainder 40 (remainder 206 40)) (remainder (remainder 206 40) (remainder 40 (remainder 206 40)))))))
+
+; 21. Tracing through an algorithm to find the smallest divisors of a few numbers. Not worth the time to type here.
+
+; 22. Timed prime tests:
+
+(define (timed-prime-test n)
+    (newline)
+    (display n)
+    (start-prime-test n (runtime)))
+
+(define (start-prime-test n start-time)
+    (if (prime? n)
+        (report-prime (- (runtime) start-time))))
+
+(define (report-prime elapsed-time)
+    (display " *** ")
+    (display elapsed-time))
