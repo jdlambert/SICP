@@ -316,4 +316,43 @@
     (display " *** ")
     (display elapsed-time))
 
+(define (search-for-primes lower upper) 
+  (define (iter n) 
+    (if (<= n upper)
+        (begin (timed-prime-test n)
+               (iter (+ n 1)))
+        (display "End of testing")))
+  (iter lower))
 
+; Since the testing algorithm has order of growth THETA(sqrt(N)), the book suggests that testing for primes around 10000 should take
+; around sqrt(10) times as long as testing for primes around 1000. However, my elapsed-time only evaluates to a non-zero value
+; once the tested number starts to reach around 10^6. I just found this fascinating, just a little example of how much computing power
+; has grown since this text was published.
+
+; 23. Fast prime tests:
+
+; In this exercise, I rewrite the above timed prime tests to use fast-prime?, which is an implementation of Fermat's little theorem.
+; The Fermat test has an order of growth of THETA(log N), so I'd expect the time to test primes near 10^6 to be around twice those needed
+; to test primes near 10^3
+
+
+(define (timed-fermat-prime-test n)
+    (newline)
+    (display n)
+    (start-fermat-prime-test n (runtime)))
+
+(define (start-fermat-prime-test n start-time)
+    (if (fast-prime? n 100)
+        (report-prime (- (runtime) start-time))))
+
+(define (fermat-search-for-primes lower upper) 
+  (define (iter n) 
+    (if (<= n upper)
+        (begin (timed-fermat-prime-test n)
+               (iter (+ n 1)))
+        (display "End of testing")))
+  (iter lower))
+
+; I sort of arbitrarily chose 100 as the number of repetitions. As expected, the order of growth seems logarithmic. Specifically, primes around 10^6 were detected in around 10ms, while those around 10^12 were detected in around 20ms. I also looked at some Carmichael numbers and saw that they were, as expected, falsly reported as prime.
+
+;
