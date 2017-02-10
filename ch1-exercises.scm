@@ -329,7 +329,63 @@
 ; once the tested number starts to reach around 10^6. I just found this fascinating, just a little example of how much computing power
 ; has grown since this text was published.
 
-; 23. Fast prime tests:
+; 23. Optimizing find-divisor by making it skip testing even numbers other than two
+
+(define (smallest-divisor-skip-evens n)
+    (find-divisor-skip-evens n 2))
+
+(define (find-divisor-skip-evens n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+                  ((divides? test-divisor n) test-divisor)
+                          (else (find-divisor-skip-evens n (next-divisor test-divisor)))))
+
+(define (next-divisor test-divisor)
+    (if (= 2 test-divisor)
+        3
+        (+ test-divisor 2)))
+
+(define (divides? a b)
+    (= (remainder b a) 0))
+
+(define (prime-skip-evens? n)
+    (= n (smallest-divisor-skip-evens n)))
+
+(define (smallest-divisor n)
+    (find-divisor n 2))
+
+(define (find-divisor n test-divisor)
+    (cond ((> (square test-divisor) n) n)
+                  ((divides? test-divisor n) test-divisor)
+                          (else (find-divisor n (+ test-divisor 1)))))
+
+(define (prime? n)
+    (= n (smallest-divisor n)))
+
+(define (prime-tester-time num)
+    (define (start-test test? start-time)
+        (test? num)
+        (display "***")
+        (display  (- (runtime) start-time)))
+    (start-test prime-skip-evens? (runtime)) 
+    (start-test prime? (runtime)))
+   
+; The algorithm isn't twice as fast as the original, as you might guess. Here're a couple data points:
+;       Number        |     Improved Speed    |    Original Speed   |   Ratio 
+; 48 millionth prime  |         50ms          |         90ms        |   1:1.8
+; 49 millionth prime  |         50ms          |         80ms        |   1:1.6
+; 49 millionth prime  |         50ms          |         80ms        |   1:1.6
+; 49 millionth+1 prime|         60ms          |         80ms        |   1:1.33
+; 50 millionth prime  |         50ms          |         90ms        |   1:1.8 
+
+; I'm not sure what to make of these numbers. They're pretty consistent. I assume that (runtime) only has a resolution of 10ms,
+; but I'm not sure I can reconcile that with the consistency.
+
+; I do have an idea as to why the ratio isn't closer to 1:2, though. The replacement of the primitive operation (+ test-divisor 1)
+; by (next-divisor test-divisor) is a significant increase in resource use. 
+; This call builds a new environment pane, and in turn tests a conditional and then evaluates the appropriate branch.
+; The result is a bit of a drop in performance compared to the primitive operation.
+
+; 24.  prime tests:
 
 ; In this exercise, I rewrite the above timed prime tests to use fast-prime?, which is an implementation of Fermat's little theorem.
 ; The Fermat test has an order of growth of THETA(log N), so I'd expect the time to test primes near 10^6 to be around twice those needed
