@@ -411,4 +411,56 @@
 
 ; I sort of arbitrarily chose 100 as the number of repetitions. As expected, the order of growth seems logarithmic. Specifically, primes around 10^6 were detected in around 10ms, while those around 10^12 were detected in around 20ms. I also looked at some Carmichael numbers and saw that they were, as expected, falsly reported as prime.
 
-;
+; 25. Rewriting expmod?:
+
+(define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp)
+            (remainder (square (expmod base (/ exp 2) m))
+                       m))
+          (else
+            (remainder (* base (expmod base (- exp 1) m))
+                       m))))
+
+;vs
+
+(define (expmod base exp m)
+    (remainder (fast-exp base exp) m))
+
+(define (fast-exp b n)
+    (cond ((= n 0) 1)
+          ((even? n) (square (fast-exp b (/ n 2))))
+          (else (* b (fast-exp b (- n 1))))))
+
+
+; The original expmod scales pretty well with large numbers, but the new one does not. Because each successive recursion is called passed through
+; the remainder process, any new arithmetic is done with numbers smaller than m. With the direct fast-exp approach, arithmetic is done with
+; arbitrarily large numbers, and multiplication grinds to a halt.
+
+; 26. Writing expmod incorrectly:
+
+(define (expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp)
+            (remainder (* (expmod base (/ exp 2) m) (expmod base (/exp 2) m))
+                       m))
+          (else (remainder (* base (expmod base (- exp 1) m))
+                           m))))
+; "By writing the procedure like that you have transformed the THETA(log n) process into a THETA(n) process" - Eva Lu Ator
+
+; The explicit multiplication results in two expmod branches for each call, resulting in exponential time relative to the original
+; algorithm. Since the original algorithm was logarithmic, this balances out to THETA(n) time.
+
+; 27. Testing Carmichael numbers more explicitly:
+
+(define (one-fermat-test a n)
+  (= (expmod a n n) a))
+
+(define (full-fermat-test n)
+    (define (iter a) 
+      (cond ((>= a n) #t)
+            ((one-fermat-test a n) (iter (+ a 1)))
+            (else #f)))
+    (iter 2))
+
+; As expected, trying the Carmichael number examples in this full test results in #t. Thus, they will always fool the Fermat test.
