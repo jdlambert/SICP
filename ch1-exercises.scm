@@ -464,3 +464,46 @@
     (iter 2))
 
 ; As expected, trying the Carmichael number examples in this full test results in #t. Thus, they will always fool the Fermat test.
+
+; 28. The Miller-Rabin test:
+
+; The Miller-Rabin test uses a modified version of Fermat's little theorem. The procedure implementing it below is a bit slower than the
+; procedure above implementing the standard Fermat test, but it cannot be tricked by Carmichael numbers.
+
+(define (mr-expmod base exp m)
+    (cond ((= exp 0) 1)
+          ((even? exp)
+            (remainder (check-and-square (mr-expmod base (/ exp 2) m) m)
+                       m))
+          (else
+            (remainder (* base (mr-expmod base (- exp 1) m))
+                       m))))
+
+(define (check-and-square num base)
+  (if 
+    (nontrivial-sqrt-of-one? num base)
+    0
+    (square num)))
+
+(define (nontrivial-sqrt-of-one? num base)
+  (and (nontrivial? num base) (sqrt-of-one? num base)))
+
+(define (nontrivial? num base)
+  (not (or (= 1 num) (= (- base 1) num))))
+
+(define (sqrt-of-one? num base)
+    (= (remainder (square num) base) 1))
+
+(define (mr-test n)
+    (define (try-it a)
+          (= (mr-expmod a (- n 1) n) 1))
+      (try-it (+ 1 (random (- n 1)))))
+
+(define (mr-fast-prime? n times)
+    (cond ((= times 0) true)
+                  ((mr-test n) (mr-fast-prime? n (- times 1)))
+                          (else false)))
+
+; SECTION 1.3 Formulating Abstractions with Higher-Order Procedures
+
+
