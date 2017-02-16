@@ -409,7 +409,9 @@
         (display "End of testing")))
   (iter lower))
 
-; I sort of arbitrarily chose 100 as the number of repetitions. As expected, the order of growth seems logarithmic. Specifically, primes around 10^6 were detected in around 10ms, while those around 10^12 were detected in around 20ms. I also looked at some Carmichael numbers and saw that they were, as expected, falsly reported as prime.
+; I sort of arbitrarily chose 100 as the number of repetitions. As expected, the order of growth seems logarithmic.
+; Specifically, primes around 10^6 were detected in around 10ms, while those around 10^12 were detected in around 20ms. 
+; I also looked at some Carmichael numbers and saw that they were, as expected, falsly reported as prime.
 
 ; 25. Rewriting expmod?:
 
@@ -506,4 +508,25 @@
 
 ; SECTION 1.3 Formulating Abstractions with Higher-Order Procedures
 
+; 29. Simpson's Rule
 
+(define (cube x) (* x x x))
+
+(define (sum term a next b)
+  (if (> a b)
+      0
+      (+ (term a)
+         (sum term (next a) next b))))
+
+(define (inc i) (+ i 1))
+
+(define (simpson f a b n)
+  (define h (/ (- b a) n))
+  (define (y k)
+    (f (+ a (* k h))))
+  (define (term k)
+    (* (cond ((odd? k) 4)
+             ((or (= 0 k) (= n k)) 1)
+             (else 2))
+       (y k)))
+  (/ (* h (sum term 0 inc n)) 3.0))
