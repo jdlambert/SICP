@@ -530,3 +530,120 @@
              (else 2))
        (y k)))
   (/ (* h (sum term 0 inc n)) 3.0))
+
+; Well I looked into Simpson's rule a bit. I was puzzled because (simpson cube 0 1 2) returns an exact 0.25
+; Apparently this method is exact for polynomials up to order three! I also learned that n should be an even number.
+; Simpson's rule with odd 'n' input has less accurate results than the simpler Riemann sum.
+
+; 30. Re-writing sum as an iterative process
+
+(define (sum term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (+ result (term a)))))
+  (iter a 0))
+
+; 31. An analogous product procedure, in both iterative and recursive forms
+
+; Iterative
+(define (product term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (* result (term a)))))
+  (iter a 1))
+
+; Recursive
+(define (product term a next b)
+  (if (> a b)
+      1
+      (* (term a)
+         (product term (next a) next b))))
+
+; Some examples:
+
+(define (identity n) n)
+
+(define (inc n) (+ n 1))
+
+(define (factorial n)
+  (product identity 1 inc n))
+
+(define (pi-approx n)
+  (define (term j)
+    (if (even? j)
+        (/ j (+ j 1.0))
+        (/ (+ j 1.0) j)))
+  (* 4 (product term 2 inc n)))
+
+; 31. Generalize sum and product to accumulate:
+
+; Iterative
+(define (accumulate combiner null-value term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (iter (next a) (combiner result (term a)))))
+  (iter a null-value))
+
+; Recursive
+(define (accumulate combiner null-value term a next b)
+  (if (> a b)
+      null-value
+      (combiner (term a)
+                (accumulate combiner null-value term (next a) next b))))
+
+; 32. Add a filter to the accumulator:
+
+; Iterative
+(define (accumulate combiner null-value predicate? term a next b)
+  (define (iter a result)
+    (if (> a b)
+        result
+        (if (predicate? a)
+          (iter (next a) (combiner result (term a))))
+          (iter (next a) result)))
+  (iter a null-value))
+
+; Recursive
+(define (accumulate combiner null-value predicate? term a next b)
+  (if (> a b)
+      null-value
+      (if (predicate? a)
+        (combiner (term a)
+                  (accumulate combiner null-value term (next a) next b)))
+        (accumulate combiner null-value predicate? term (next a) next b)))
+
+; Some examples
+
+; The sum of the squares of prime numbers on the interval a to b
+
+(define (prime-sum a b)
+    (accumulate + 0 prime? identity a inc b))
+
+; The product of all positive integers less than n that are relatively prime to n
+
+(define (relatively-prime-product n)
+  (define (relatively-prime? m)
+    (= (gcd m n) 1))
+  (accumulate * 1 relatively-prime? identity 2 inc n))
+
+; 33.
+
+(define (f g)
+  (g 2))
+
+; What happens when we ask for an interpretation of (f f)?
+; "The object 2 is not applicable"
+; Why?
+
+(f f)
+; ->
+(f 2)
+; ->
+(2 2)
+; -> ERROR
+
+
+
