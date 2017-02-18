@@ -577,7 +577,7 @@
         (/ (+ j 1.0) j)))
   (* 4 (product term 2 inc n)))
 
-; 31. Generalize sum and product to accumulate:
+; 32. Generalize sum and product to accumulate:
 
 ; Iterative
 (define (accumulate combiner null-value term a next b)
@@ -594,7 +594,7 @@
       (combiner (term a)
                 (accumulate combiner null-value term (next a) next b))))
 
-; 32. Add a filter to the accumulator:
+; 33. Add a filter to the accumulator:
 
 ; Iterative
 (define (accumulate combiner null-value predicate? term a next b)
@@ -629,7 +629,7 @@
     (= (gcd m n) 1))
   (accumulate * 1 relatively-prime? identity 2 inc n))
 
-; 33.
+; 34.
 
 (define (f g)
   (g 2))
@@ -645,5 +645,24 @@
 (2 2)
 ; -> ERROR
 
+; 35.
+; 36.
+; 37.
+; 38.
+; 39. Cubic polynomial procedure builder to be used in conjunction with Newton's method
 
+(define (cubic a b c)
+  (lambda (x)
+    (+ (* a (* x x x))
+       (* b (* x x))
+       (* c x))))
 
+; 40. Procedure doubler
+
+(define (double proc)
+  (lambda (x) (proc (proc x))))
+
+; 41. Procedure composition
+
+(define (compose first second)
+  (lambda (x) (first (second x))))
