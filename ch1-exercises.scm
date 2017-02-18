@@ -533,7 +533,7 @@
 
 ; Well I looked into Simpson's rule a bit. I was puzzled because (simpson cube 0 1 2) returns an exact 0.25
 ; Apparently this method is exact for polynomials up to order three! I also learned that n should be an even number.
-; Simpson's rule with odd 'n' input has less accurate results than the simpler Riemann sum.
+; Simpson's rule with odd 'n' input has less accurate results than those from the Riemann sum.
 
 ; 30. Re-writing sum as an iterative process
 
@@ -649,7 +649,9 @@
 ; 36.
 ; 37.
 ; 38.
-; 39. Cubic polynomial procedure builder to be used in conjunction with Newton's method
+; 39.
+
+; 40. Cubic polynomial procedure builder to be used in conjunction with Newton's method
 
 (define (cubic a b c)
   (lambda (x)
@@ -657,12 +659,47 @@
        (* b (* x x))
        (* c x))))
 
-; 40. Procedure doubler
+; 41. Procedure doubler
 
 (define (double proc)
   (lambda (x) (proc (proc x))))
 
-; 41. Procedure composition
+; 42. Procedure composition
 
 (define (compose first second)
   (lambda (x) (first (second x))))
+
+; 43. Procedure repeated a number of times
+
+(define (repeated proc n)
+  (lambda (x)
+    (define (iter a)
+      (if (> a n)
+          x
+          (proc (iter (+ a 1)))))
+    (iter 1)))
+
+; 44. Smoothing and n-fold smoothing a function
+
+(define (smooth function)
+  (let ((dx 0.001))
+    (lambda (x)
+            (/ (+ (- x dx)
+                  x
+                  (+ x dx))
+               3))))
+
+(define (n-fold-smooth function n)
+  (repeated smooth n))
+
+; 45.
+
+; 46. Iterative improvement, an abstraction of Newton's method, average damping, etc.
+
+(define (iterative-improve good-enough? improve)
+  (lambda (guess)
+    (define (iter current)
+      (if (good-enough? current)
+          current
+          (iter (improve current))))
+    (iter guess)))
