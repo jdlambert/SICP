@@ -739,7 +739,14 @@
       
 ; 39. Approximating tangent by means of a continued fraction
 
-
+(define (tan-cf x k)
+  (define (n i)
+       (if (= 1 i)
+           x
+           (- (* x x))))
+  (define (d i)
+    (- (* i 2) 1))
+  (cont-frac n d k))
 
 ; 40. Cubic polynomial procedure builder to be used in conjunction with Newton's method
 
