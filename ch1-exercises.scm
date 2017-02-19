@@ -645,8 +645,61 @@
 (2 2)
 ; -> ERROR
 
-; 35.
-; 36.
+; 35. Fixed point   
+
+(define tolerance 0.0001)
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ((next (f guess)))
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+; Phi is (1 + sqrt(5))/2
+; The be the fixed point of x -> 1 + 1/x, a constant k must satisfy the equation
+; k = 1 + 1/k
+; Let j = sqrt(5) for the sake of brevity:
+; 1 + 1/phi = 1 + 2/(1 + j) = 1 + (2(1 - j))/((1 + j)(1 - j))
+; = 1 + 2 * (1-j)/(1 - 5) = 1 + (j-1)/2 = (j + 1)/2 = phi
+; Thus, phi satisfies the above equality and is a fixed point of the related transformation.
+; It can thus be calculated by:
+
+(define (average a b) (/ (+ a b) 2))
+
+; No average damping
+(fixed-point (lambda (x) (+ 1 (/ 1 x))) 1)
+
+; Average damping
+(fixed-point (lambda (x) (average x (+ 1 (/ 1 x)))) 1)
+
+; 36. Printing fixed-point and comparison with and without average damping
+
+(define (fixed-point f first-guess)
+  (define (close-enough? v1 v2)
+    (< (abs (- v1 v2)) tolerance))
+  (define (try guess)
+    (let ((next (f guess)))
+      (display guess)
+      (newline)
+      (if (close-enough? guess next)
+          next
+          (try next))))
+  (try first-guess))
+
+(define (thousand-log n) (/ (log 1000) (log n)))
+
+(fixed-point thousand-log 2)
+; The above took 29 steps to converge to 4.5555
+
+(define (damped-thousand-log n)
+  (average (thousand-log n)
+           n))
+; Whereas this one, with average damping, only took 7 steps to converge to the same value
+
 ; 37.
 ; 38.
 ; 39.
@@ -694,7 +747,7 @@
 
 ; 45.
 
-; 46. Iterative improvement, an abstraction of Newton's method, average damping, etc.
+; 46. Iterative improvement, an abstraction of Newton's method, fixed point search, etc.
 
 (define (iterative-improve good-enough? improve)
   (lambda (guess)
