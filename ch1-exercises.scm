@@ -1,6 +1,6 @@
 ; CHAPTER ONE: BUILDING ABSTRACTIONS WITH PROCEDURES
 
-; Revisit later: 13-15
+; Revisit later: 13-15 & 45
 
 ; SECTION 1.1: The Elements of Programming
 
@@ -789,7 +789,17 @@
 (define (n-fold-smooth function n)
   (repeated smooth n))
 
-; 45.
+; 45. Simply using average damping doesn't suffice for finding the nth root of a number for n > 3
+; We can use two average dampings to avoid the lack of convergence of the fixed-point process.
+
+(define (average-damp proc)
+  (lambda (x) 
+          (average x
+                   (proc x))))
+
+(define (n-damp n)
+  (repeated average-damp n))
+
 
 ; 46. Iterative improvement, an abstraction of Newton's method, fixed point search, etc.
 
