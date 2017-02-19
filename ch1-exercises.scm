@@ -700,9 +700,46 @@
            n))
 ; Whereas this one, with average damping, only took 7 steps to converge to the same value
 
-; 37.
-; 38.
-; 39.
+; 37. Terminated continued fractions
+
+; For a continued fraction of the form N1 / (D1 + N2 / (D2 + ...
+; n and d are functions of the index i, k is the total number of N/D pairs
+
+(define (cont-frac n d k)
+  (define (recurse i)
+    (if (= i k)
+        (/ (n k) (d k))
+        (/ (n i) (+ (d i) (recurse (+ i 1))))))
+  (recurse 1))
+
+(define (one x) 1.0)
+
+(cont-frac one one 12)
+
+; Twelve layers deep is accurate to 4 decimal places
+
+; The backwards iterative version:
+
+(define (cont-frac n d k)
+  (define (iter i result)
+    (if (= i 1)
+        (/ (n 1) (+ (d 1) result))
+        (iter (- i 1) (/ (n i) (+ (d i) result)))))
+  (iter (- k 1) (/ (n k) (d k))))
+
+; 38. Approximating Euler's constant by means of a continued fraction
+
+(define (euler-d n)
+  (cond ((= 2 n) 2)
+        ((= 0 (remainder (- n 2) 3)) (+ (* (/ (- n 2) 3) 2) 2))
+        (else 1)))
+
+(define (euler-cf n)
+  (+ 2 (cont-frac one euler-d n)))
+      
+; 39. Approximating tangent by means of a continued fraction
+
+
 
 ; 40. Cubic polynomial procedure builder to be used in conjunction with Newton's method
 
