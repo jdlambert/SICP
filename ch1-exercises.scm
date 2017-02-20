@@ -1,6 +1,6 @@
 ; CHAPTER ONE: BUILDING ABSTRACTIONS WITH PROCEDURES
 
-; Revisit later: 13-15 & 45
+; Revisit later: 13-15
 
 ; SECTION 1.1: The Elements of Programming
 
@@ -769,12 +769,14 @@
 ; 43. Procedure repeated a number of times
 
 (define (repeated proc n)
-  (lambda (x)
-    (define (iter a)
-      (if (> a n)
-          x
-          (proc (iter (+ a 1)))))
-    (iter 1)))
+  (if (= 0 n)
+    (lambda (n) n)
+    (lambda (x)
+        (define (iter a)
+        (if (> a n)
+            x
+            (proc (iter (+ a 1)))))
+        (iter 1))))
 
 ; 44. Smoothing and n-fold smoothing a function
 
@@ -800,6 +802,36 @@
 (define (n-damp n)
   (repeated average-damp n))
 
+(define (fixed-point-of-transform g transform guess)
+  (fixed-point (transform g) guess))
+
+(define (damped-nth-root-fixed-point x dampings n initial-guess)
+  (let ((transform (lambda (y) (/ x (expt y (- n 1))))))
+      (fixed-point-of-transform transform
+                                (n-damp dampings)
+                                2.0)))
+
+(define (test-root n m)
+  (damped-nth-root-fixed-point 6 n m n 5))
+; I used the above procedure with the printing fixed-point procedure to find some values
+; for which a given number of average dampings doesn't work
+
+; For the kth root:
+
+; 1 damping is good until k = 3, inclusive
+; 2 is good until k = 7
+; 3 is good until k = 15
+; 4 worked until k = 27, at which point I ran into a floating-point overflow
+; I assume n dampings first fails when k = 2^(n+1)
+
+; Using this I can try to create a version of the above nth-root process that needs less parameters:
+
+(define (better-nth-root x n initial-guess)
+  (let ((dampings (floor (/ (log n) (log 2)))))
+    (damped-nth-root-fixed-point x dampings n initial-guess)))
+
+; The procedure works as expected, but I still run into a floating-point overflow,
+; but I'll consider that beyond the scope of this exercise.
 
 ; 46. Iterative improvement, an abstraction of Newton's method, fixed point search, etc.
 
