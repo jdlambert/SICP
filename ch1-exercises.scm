@@ -1,7 +1,5 @@
 ; CHAPTER ONE: BUILDING ABSTRACTIONS WITH PROCEDURES
 
-; Revisit later: 13-15
-
 ; SECTION 1.1: The Elements of Programming
 
 ; 1. Just a bit of reading of scheme expressions, nothing special and
@@ -203,7 +201,7 @@
         (else (+ (pascal (- row 1) col)
                  (pascal (- row 1) (- col 1))))))
 
-; 13-15. Math exercises, to be revisited when I have pen and paper
+; 13-15. Math exercises, maybe revisit later.
 
 ; 16. An iterative exponentiation process that uses successive squaring to achieve a logarithmic number of steps
 
