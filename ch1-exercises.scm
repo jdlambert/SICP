@@ -822,7 +822,7 @@
 ; 4 worked until k = 27, at which point I ran into a floating-point overflow
 ; I assume n dampings first fails when k = 2^(n+1)
 
-; Using this I can try to create a version of the above nth-root process that needs less parameters:
+; Using this I can create a version of the above nth-root process that needs less parameters:
 
 (define (better-nth-root x n initial-guess)
   (let ((dampings (floor (/ (log n) (log 2)))))
