@@ -14,6 +14,9 @@
           (else (cons (/ (* -1 (abs n)) g) (/ (abs d) g))))))
 
 ;2.2 Line segments in a plane (layers of abstraction exercise)
+
+; point level of abstraction, cons cdr and car
+
 (define (make-point x y)
   (cons x y))
 
@@ -23,6 +26,8 @@
 (define (y-point point)
   (cdr point)) 
 
+; segment level of abstraction, make-point x-point and y-point
+
 (define (make-segment x1 y1 x2 y2)
   (cons (make-point x1 y1) (make-point x2 y2)))
 
@@ -31,6 +36,8 @@
 
 (define (end-segment segment)
   (cdr segment))
+
+; one level of abstraction up, applications of segments
 
 (define (midpoint-segment segment)
   (make-point (/ (+ (x-point (start-segment segment)) (x-point (end-segment segment))) 2)
@@ -43,8 +50,12 @@
    (display ",")
    (display (y-point p))
    (display ")"))
+
+;2.4 Representation for rectangles in a plane
+
+;2.5 Alternate representation of pairs (cons a b) as the product (2^a)(3^b)
       
-;church numerals
+;2.6 Church numerals
 (define zero (lambda (f) (lambda (x) x)))
 
 (define (add-1 n)
