@@ -1,45 +1,19 @@
-;CHAPTER TWO : BUILDING ABSTRACTIONS WITH DATA
+;CHAPTER TWO: BUILDING ABSTRACTIONS WITH DATA
+
+; SECTION 2.1: Introduction to Data Abstraction
 
 ;2.1 rational number datatype with sign checking
 
 (define (make-rat n d)
   (let ((g (gcd n d)))
-    (if (= (/ n d) (/ (abs n) (abs d)))
-        (cons (/ (abs n) g) (/ (abs d) g))
-        (cons (/ (* -1 (abs n)) g) (/ (abs d) g)))))
+    (cond ((= 0 d) (error "Divide by zero!"))
+          ((= 0 n) (cons 0 1))
+          ((or (and (> n 0) (> d 0))  
+               (and (< n 0) (< d 0)))
+               (cons (/ (abs n) g) (/ (abs d) g)))
+          (else (cons (/ (* -1 (abs n)) g) (/ (abs d) g))))))
 
-(define (numer x) (car x))
-(define (denom x) (cdr x))
-(define (print-rat x)
-   (newline)
-   (display (numer x))
-   (display ("/"))
-   (display (denom x)))
- 
-(define (add-rat x y)
-   (make-rat (+ (* (numer x) (denom y))
-                (* (numer y) (denom x)))
-             (* (denom x) (denom y))))
-
-(define (sub-rat x y)
-   (make-rat (- (* (numer x) (denom y))
-                (* (numer y) (denom x)))
-             (* (denom x) (denom y))))
-
-(define (mul-rat x y)
-   (make-rat (* (numer x) (numer y))
-             (* (denom x) (denom y))))
-
-(define (div-rat x y)
-   (make rat (* (numer x) (demon y))
-             (* (denom x) (numer y))))
-
-(define (equal-rat x y)
-   (= (* (numer x) (denom y))
-      (* (numer y) (denom x))))
-
-
-;2.2 cartesian line segment constructor and selectors
+;2.2 Line segments in a plane (layers of abstraction exercise)
 (define (make-point x y)
   (cons x y))
 
