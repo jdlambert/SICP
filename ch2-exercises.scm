@@ -37,11 +37,19 @@
 (define (end-segment segment)
   (cdr segment))
 
+(define (average-x first-point second-point)
+  (/ (+ (x-point first-point) (x-point second-point))))
+
+(define (average-y first-point second-point)
+  (/ (+ (y-point first-point) (y-point second-point))))
+
 ; one level of abstraction up, applications of segments
 
 (define (midpoint-segment segment)
-  (make-point (/ (+ (x-point (start-segment segment)) (x-point (end-segment segment))) 2)
-              (/ (+ (y-point (start-segment segment)) (y-point (end-segment segment))) 2)))
+  (make-point (average-x (start-segment segment)
+                         (end-segment segment))
+              (average-y (start-segment segment)
+                         (end-segment segment))))
 
 (define (print-point p)
    (newline)
