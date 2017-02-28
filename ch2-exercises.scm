@@ -37,6 +37,12 @@
 (define (end-segment segment)
   (cdr segment))
 
+(define (segment-length segment)
+  (let ((start (start-segment segment))
+        (end (end-segment segment)))
+       (sqrt (+ (square (- (x-point start) (x-point end)))
+                (square (- (y-point start) (y-point end)))))))
+
 (define (average-x first-point second-point)
   (/ (+ (x-point first-point) (x-point second-point))))
 
@@ -59,7 +65,28 @@
    (display (y-point p))
    (display ")"))
 
-;2.4 Representation for rectangles in a plane
+;2.3 Representation for rectangles in a plane, an exercise in barriers between levels of abstraction
+
+; The first implementation uses two segments that meet at a point
+(define (make-rectangle first-segment second-segment)
+  (cons first-segment second-segment))
+
+(define (first-edge rectangle)
+  (car rectangle))
+
+(define (second-edge rectangle)
+  (cdr rectangle))
+
+; The second implementation placeholder
+
+; Lastly, the procedures at a higher level of abstraction
+(define (perimeter rectangle)
+  (* 2 (+ (first-edge-length rectangle) (second-edge-length rectangle))))
+
+(define (area rectangle)
+  (* (first-edge-length rectangle) (second-edge-length rectangle)))
+
+;2.4
 
 ;2.5 Alternate representation of pairs (cons a b) as the product (2^a)(3^b)
       
