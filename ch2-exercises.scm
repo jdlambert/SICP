@@ -110,7 +110,24 @@
 (define (cdr z)
   (z (lambda (p q) q)))
 
-;2.5 Alternate representation of pairs (cons a b) as the product (2^a)(3^b)
+;2.5 Alternate representation of pairs of natural numbers (cons a b) as the product (2^a)(3^b)
+
+(define (num-cons a b)
+  (* (expt 2 a) (expt 3 b)))
+
+(define (num-car p)
+  (define (iter total return)
+    (if (= 0 (remainder total 2))
+        (iter (/ total 2) (+ return 1))
+        return))
+  (iter p 0))
+
+(define (num-cdr p)
+  (define (iter total return)
+    (if (= 0 (remainder total 3))
+        (iter (/ total 3) (+ return 1))
+        return))
+  (iter p 0))
       
 ;2.6 Church numerals
 (define zero (lambda (f) (lambda (x) x)))
