@@ -68,8 +68,7 @@
 ;2.3 Representation for rectangles in a plane, an exercise in barriers between levels of abstraction
 
 ; The first implementation uses two segments that meet at a point
-(define (make-rectangle first-segment second-segment)
-  (cons first-segment second-segment))
+(define (make-rectangle-segment first second) (cons first second))
 
 (define (first-edge rectangle)
   (car rectangle))
@@ -77,16 +76,39 @@
 (define (second-edge rectangle)
   (cdr rectangle))
 
-; The second implementation placeholder
+; This second implementation uses the first implementation with different constructor parameters
+
+(define (make-rectangle-point first second)
+  (make-rectangle-segment (make-segment first
+                                        (make-point (x-point first) (y-point second)))
+                          (make-segment first
+                                        (make-point (x-point second) (y-point first)))))
 
 ; Lastly, the procedures at a higher level of abstraction
 (define (perimeter rectangle)
-  (* 2 (+ (first-edge-length rectangle) (second-edge-length rectangle))))
+  (* 2 (+ (segment-length (first-edge rectangle)) (segment-length (second-edge-length rectangle)))))
 
 (define (area rectangle)
-  (* (first-edge-length rectangle) (second-edge-length rectangle)))
+  (* (segment-length (first-edge rectangle)) (segment-length (second-edge-length rectangle))))
 
-;2.4
+;2.4 Procedural representation of pairs
+
+(define (cons x y)
+  (lambda (m) (m x y)))
+
+(define (car z)
+  (z (lambda (p q) p)))
+
+;    (car (cons (x y))) y
+; => (car (lambda (m) (m x y)))
+; => ((lambda (m) (m x y)) (lambda (p q) p))
+; => ((lambda (p q) p) (x y))
+; => x
+
+; The analogous definition for (cdr z) is
+
+(define (cdr z)
+  (z (lambda (p q) q)))
 
 ;2.5 Alternate representation of pairs (cons a b) as the product (2^a)(3^b)
       
