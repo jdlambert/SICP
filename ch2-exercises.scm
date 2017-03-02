@@ -150,7 +150,8 @@
 ; => 
 ; => 
 
-; Interval arithmetic
+; INTERVAL ARITHMETIC
+
 (define (add-interval  x y)
    (make-interval (+ (lower-bound x) (lower-bound y))
                   (+ (upper-bound x) (upper-bound y))))
@@ -194,8 +195,23 @@
 ; The sum is (a + c, b + d), so the width of the sum is (b + d - a - c)/2, which is simply the sum of the two original widths
 ; For difference is (a - c, b - d), which has a width of (b - d - a + c)/2 = ((b-a) - (d-c))/2, the difference in the two original widths
 ; Multiplication and division are a bit trickier, since they involve conditionals, hidden in the implementations of min and max
+; As a consequence of this, the width 
 
-; EXAMPLES PLACEHOLDER
+(define first (make-interval 1 2))
+(width first) ; 1
+(define second (make-interval -6 -5))
+(width second) ; 1
+(define thousand (make-interval 0 1000))
+(width thousand) ; 500
+
+(width (mul-interval first thousand))  ; 1000, the interval is (0, 2000)
+(width (mul-interval second thousand)) ; 3000, the interval is (-6000, 0) 
+
+(width (mul-interval thousand first))  ; 500, the interval remains (0, 1000)
+(width (mul-interval thousand second)) ; 100, the interval is (-200, 0) 
+
+; The widths of first and second are equal, but the widths of the products and quotients are different
+; Thus, the width of a product or quotient interval is not a function of the widths of the factors or divisors
 
 ; 2.10
 
