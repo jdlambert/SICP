@@ -130,12 +130,27 @@
   (iter p 0))
       
 ;2.6 Church numerals
+
 (define zero (lambda (f) (lambda (x) x)))
 
 (define (add-1 n)
    (lambda (f) (lambda (x) (f ((n f) x)))))
 
-;interval arithmetic
+;    (add-1 zero)
+; => (lambda (f) (lambda (x) (f ((zero f) x)))) 
+; => (lambda (f) 
+             (lambda (x) 
+                     (f (((lambda (g) 
+                                  (lambda (y) 
+                                          y))) x))))
+
+(define one
+   (lambda (f) (lambda (x) (f (((lambda (g) (lambda (y) y))) x)))))
+
+; => 
+; => 
+
+; Interval arithmetic
 (define (add-interval  x y)
    (make-interval (+ (lower-bound x) (lower-bound y))
                   (+ (upper-bound x) (upper-bound y))))
@@ -152,7 +167,8 @@
    (cond ((and (< (lower-bound y) 0) (> (upper-bound y) 0)) (display "Error!!! Zero-spanning interval division"))
          (else (mul-interval x
                             (make-interval (/ 1.0 (upper-bound y))
-                                           (/ 1.0 (lower-bound y)))))))
+
+; 2.7 Some late constructors and selectors
 
 (define (make-interval a b)
    (cons a b))
@@ -162,10 +178,17 @@
  
 (define (upper-bound interval)
    (cdr interval))
- 
+
+; 2.8 Subtract interval, analogous to add interval
+
 (define (sub-interval  x y)
    (make-interval (- (lower-bound x) (lower-bound y))
                   (- (upper-bound x) (upper-bound y))))
+
+; 2.9 Width of an interval
+
+(define (width interval)
+  (- (upper-bond interval) (lower-bound interval)))
 
 (define (make-center-width c w)
    (make-interval (- c w) (+ c w)))
