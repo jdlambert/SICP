@@ -164,9 +164,9 @@
                        (max p1 p2 p3 p4))))
 
 (define (div-interval x y)
-   (cond ((and (< (lower-bound y) 0) (> (upper-bound y) 0)) (display "Error!!! Zero-spanning interval division"))
-         (else (mul-interval x
-                            (make-interval (/ 1.0 (upper-bound y))
+  (mul-interval x
+                (make-interval (/ 1.0 (upper-bound y))
+                               (/ 1.0 (lower-bound y)))))
 
 ; 2.7 Some late constructors and selectors
 
@@ -188,7 +188,16 @@
 ; 2.9 Width of an interval
 
 (define (width interval)
-  (- (upper-bond interval) (lower-bound interval)))
+  (/ (- (upper-bound interval) (lower-bound interval)) 2))
+
+; For addition of interval (a, b) and (c, d), with widths (b-a)/2 and (d-c)/2 respectively
+; The sum is (a + c, b + d), so the width of the sum is (b + d - a - c)/2, which is simply the sum of the two original widths
+; For difference is (a - c, b - d), which has a width of (b - d - a + c)/2 = ((b-a) - (d-c))/2, the difference in the two original widths
+; Multiplication and division are a bit trickier, since they involve conditionals, hidden in the implementations of min and max
+
+; EXAMPLES PLACEHOLDER
+
+; 2.10
 
 (define (make-center-width c w)
    (make-interval (- c w) (+ c w)))
