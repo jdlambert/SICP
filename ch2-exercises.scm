@@ -131,24 +131,34 @@
       
 ;2.6 Church numerals
 
-(define zero (lambda (f) (lambda (x) x)))
+(define zero (lambda (f) (lambda (x) x))) 
+; zero is a nested lambda expression that results in (lambda (x) x) regardless of input
 
 (define (add-1 n)
    (lambda (f) (lambda (x) (f ((n f) x)))))
 
-;    (add-1 zero)
-; => (lambda (f) (lambda (x) (f ((zero f) x)))) 
-; => (lambda (f) 
-             (lambda (x) 
-                     (f (((lambda (g) 
-                                  (lambda (y) 
-                                          y))) x))))
+; (add-1 zero)
+; (lambda (f) (lambda (x) (f ((zero f) x))))
+; Since (zero f) evaluates to (lambda (x) x), ((zero f) x) evaluates to x
+; (lambda (f) (lambda (x) (f x)))
+(define one (lambda (f) (lambda (x) (f x))))
+; one is a nested lambda expression that results in a single application of f on x
 
-(define one
-   (lambda (f) (lambda (x) (f (((lambda (g) (lambda (y) y))) x)))))
+; Analogously,
+; (add-1 one)
+; (lambda (f) (lambda (x) (f ((one f) x))))
+; ((one f) x) evaluates to (f x)
+(define two (lambda (f) (lambda (x) (f (f x)))))
+; two is a nested lambda expression that results in two applications of f on x
 
-; => 
-; => 
+; zero is zero applications of f, one is one application, two is two applications
+; the nth church numeral corresponds to n applications of f
+
+; From the above observations, I conclude that addition of church numerals is just composition
+(define church-plus compose)
+
+; Also, as a little bonus, the church numerals can be generalized using a procedure from Chapter 1:
+(define (church-n n) (lambda (f) (repeated f n)))
 
 ; INTERVAL ARITHMETIC
 
@@ -266,7 +276,7 @@
         (make-interval (min p1 p2 p3 p4)
                        (max p1 p2 p3 p4))))
 
-
+; 2.12 Center-width and center-percent intervals
 
 (define (make-center-width c w)
    (make-interval (- c w) (+ c w)))
@@ -276,9 +286,18 @@
    (/ (- (upper-bound i) (lower-bound i)) 2))
 
 (define (make-center-percent c p)
-   (make-interval (- c (* c p 0.01) (+ c (* c p 0.01)))))
+   (make-center-width c (* c p 0.01)))
 (define (percent i)
-   (* (/ (/ (- (upper-bound i) (lower-bound i)) 2) center) 100))
+   (* (/ (width i) (center i)) 100))
+
+; 2.13 A simple formula for the tolerance of a product, assuming small tolerances
+
+; 2.14 Inconsistent results given two different representations of data
+
+; 2.15 Choosing between the two different representations of data
+
+; 2.15 Why can equivalent algebraic expressions lead to different answers?
+;      Can an interval-arithmetic package without this shortcoming be designed or not? 
 
 ;representing sequences
 
