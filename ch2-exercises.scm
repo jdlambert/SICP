@@ -221,7 +221,7 @@
 (width (mul-interval thousand second)) ; 100, the interval is (-200, 0) 
 
 ; The widths of first and second are equal, but the widths of the products and quotients are different
-; Thus, the width of a product or quotient interval is not a function of the widths of the factors or divisors
+; Thus, the width of a product or quotient interval is not merely a function of the widths of the factors or divisors
 
 ; 2.10 Division with an interval spanning zero
 
@@ -291,6 +291,14 @@
    (* (/ (width i) (center i)) 100))
 
 ; 2.13 A simple formula for the tolerance of a product, assuming small tolerances
+
+; If the tolerance of a product is quite low, and assuming all numbers are positive:
+
+; (A +- a%A) * (B +- b%B) = (AB +- Ba%A +- Ab%B +- a%Ab%B)
+; But b%Ba%A is the product of two low tolerance terms, and is significantly smaller than any other number in this sum
+; For this reason, I drop it to arrive at
+; (AB +- Ba%A +- Ab%B) = (AB + AB*(a% + b%))
+; Thus, a product formed from factors with low tolerances will have a tolerance approximately equal to the sum of those of its factors
 
 ; 2.14 Inconsistent results given two different representations of data
 
