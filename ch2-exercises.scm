@@ -344,12 +344,25 @@
 
 ; 2.18 Reverse a list
 
-(define (reverse l)
-   (define (helper n)
-       (if (= n (length l)) 
-           (cons (list-ref l 0) '())
-           (cons (list-ref l (- (length l) n)) (helper (+ n 1)))))
-   (helper 1))
+(define (reverse-list items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (car things)
+                    answer))))
+  (iter items '()))
+
+; I borrowed this procedure from the flawed square-list method below,
+; since I felt it was better than my previous implementation, which utilized list-ref,
+; and thus would have horrible performance on long lists
+
+; (reverse-list '(1 2 3))
+; (iter '(1 2 3) '())
+; (iter '(2 3) '(1))
+; (iter '(3) '(2 1))
+; (iter '() '(3 2 1))
+; '(3 2 1)
 
 ; 2.19 Change counting with coin options as a list
 
@@ -358,7 +371,60 @@
 (define (same-parity x . l)
   (append (list x) 
           (filter (if (even? x) even? odd?) 
-                           l)))
+                  l)))
+
+; 2.21 Two equivalent ways to square a list
+
+(define (square-list items)
+  (if (null? items)
+      '()
+      (cons (square (car items))
+            (square-list (cdr items)))))
+
+(define (square-list items)
+  (map square items))
+
+; 2.22 Two flawed iterative square-lists
+
+(define (square-list items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (square (car things))
+                    answer))))
+  (iter items '()))
+
+; This procedure's flaw is that it cons's together the answer starting from the first argument,
+; but the most deeply nested pair is the last pair of a list
+; In this way, the procedure builds a list from the tail to head, with input from head to tail
+
+; (square-list '(1 2 3))
+; (iter '(1 2 3) '())
+; (iter '(2 3) '(1))
+; (iter '(3) '(4 1))
+; (iter '() '(9 4 1))
+; '(9 4 1)
+
+(define (square-list items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons answer                
+                    (square (car things)))))) ; The difference here is the reversal of the arguments to cons
+  (iter items '()))
+
+; This procedure's flaw is that it nests the cons inside the car half of the pair
+; In contrast, lists are created by nesting the cons inside the cdr half of the pair
+; This is a usable heirarchical data structure, but is not a typical list,
+; and it doesn't look pretty at all in the scheme interpreter
+
+; (square-list '(1 2 3))
+; (iter '(1 2 3) '())
+; (iter '(2 3) '('() . 1))
+; (iter '(3) '( '('() . 1) . 4))
+; (iter '() '( '( '('() . 1) . 4) . 25))
 
 (define (count-leaves x)
    (cond ((null? x) 0)
