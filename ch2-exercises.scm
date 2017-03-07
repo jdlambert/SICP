@@ -230,7 +230,7 @@
       (error "INVALID OPERATION: Division by a zero-spanning interval! div-interval")
       (mul-interval x
                     (make-interval (/ 1.0 (upper-bound y))
-                                   (/ 1.0 (lower-bound y)))))
+                                   (/ 1.0 (lower-bound y))))))
 
 (define (spans-zero? x)
   (and (< (lower-bound x) 0) (> (upper-bound x) 0)))
@@ -302,20 +302,53 @@
 
 ; 2.14 Inconsistent results given two different representations of data
 
+(define first (make-interval 1 2))
+(define second (make-interval 2 3))
+(define third (make-interval 10 10.01))
+(define fourth (make-interval 1000 1000.01))
+
+(define (par1 r1 r2)
+  (div-interval (mul-interval r1 r2)
+                (add-interval r1 r2)))
+
+(define (par2 r1 r2)
+  (let ((one (make-interval 1 1)))
+       (div-interval one
+                     (add-interval (div-interval one r1)
+                                   (div-interval two r2)))))
+
+(par1 first second) ; (.5 . .2)
+(par2 first second) ; (.75 . .1333333)
+ 
+(par1 second third) ; (2.1413276 . 3.08)
+(par2 second third) ; (2.3076    . 2.85)
+
+; (par 1 first second)
+; (div-interval (mul-interval first second)
+;               (add-interval first second))
+; (div-interval (
+
 ; 2.15 Choosing between the two different representations of data
 
-; 2.15 Why can equivalent algebraic expressions lead to different answers?
+; 2.16 Why can equivalent algebraic expressions lead to different answers?
 ;      Can an interval-arithmetic package without this shortcoming be designed or not? 
 
-;representing sequences
+; SECTION 2.1: Heirarchical Data and the Closure Property
+
+; 2.17 Last pair in a list
 
 (define (last-pair l)
-   (if (null? (cdr l)) (car l) (last-pair (cdr l))))
+   (if (null? (cdr l)) 
+       l
+       (last-pair (cdr l))))
 
-(define (reversal l)
+; 2.18 Reverse a list
+
+(define (reverse l)
    (define (helper n)
-       (if (= n (length l)) (cons (list-ref l 0) nil)
-                                 (cons (list-ref l (- (length l) n)) (helper (+ n 1)))))
+       (if (= n (length l)) 
+           (cons (list-ref l 0) '())
+           (cons (list-ref l (- (length l) n)) (helper (+ n 1)))))
    (helper 1))
       
 (define (same-parity x . l)
