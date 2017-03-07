@@ -426,6 +426,16 @@
 ; (iter '(3) '( '('() . 1) . 4))
 ; (iter '() '( '( '('() . 1) . 4) . 25))
 
+; 2.23 Implementing for-each
+
+(define (for-each proc l)
+  (define (iter current)
+    (if (null? current)
+        #t
+        (begin (proc (car current))
+               (iter (cdr current)))))
+  (iter l))
+
 (define (count-leaves x)
    (cond ((null? x) 0)
          ((not (pair? x)) 1)
