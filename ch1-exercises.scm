@@ -368,12 +368,12 @@
     (start-test prime? (runtime)))
    
 ; The algorithm isn't twice as fast as the original, as you might guess. Here're a couple data points:
-;       Number        |     Improved Speed    |    Original Speed   |   Ratio 
-; 48 millionth prime  |         50ms          |         90ms        |   1:1.8
-; 49 millionth prime  |         50ms          |         80ms        |   1:1.6
-; 49 millionth prime  |         50ms          |         80ms        |   1:1.6
-; 49 millionth+1 prime|         60ms          |         80ms        |   1:1.33
-; 50 millionth prime  |         50ms          |         90ms        |   1:1.8 
+;       Number          |     Improved Speed    |    Original Speed   |   Ratio 
+; 48 millionth prime    |         50ms          |         90ms        |   1:1.8
+; 49 million+1th prime  |         50ms          |         80ms        |   1:1.6
+; 49 millionth prime    |         50ms          |         80ms        |   1:1.6
+; 49 million+1th prime  |         60ms          |         80ms        |   1:1.33
+; 50 millionth prime    |         50ms          |         90ms        |   1:1.8 
 
 ; I'm not sure what to make of these numbers. They're pretty consistent. I assume that (runtime) only has a resolution of 10ms,
 ; but I'm not sure I can reconcile that with the consistency.
