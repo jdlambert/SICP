@@ -350,11 +350,15 @@
            (cons (list-ref l 0) '())
            (cons (list-ref l (- (length l) n)) (helper (+ n 1)))))
    (helper 1))
-      
+
+; 2.19 Change counting with coin options as a list
+
+; 2.20 Dotted-tail notation
+
 (define (same-parity x . l)
-   (cond ((null? l) nil)
-         ((= (remainder x 2) (remainder (car l) 2)) (cons (car l) (apply same-parity x (cdr l))))
-         (else (apply same-parity x (cdr l)))))
+  (append (list x) 
+          (filter (if (even? x) even? odd?) 
+                           l)))
 
 (define (count-leaves x)
    (cond ((null? x) 0)
