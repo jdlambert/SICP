@@ -436,25 +436,61 @@
                (iter (cdr current)))))
   (iter l))
 
-(define (count-leaves x)
-   (cond ((null? x) 0)
-         ((not (pair? x)) 1)
-         (else (+ (count-leaves (car x))
-                  (count-leaves (cdr x))))))
+; 2.24 A nested list data structure
 
-(define (deep-reversal l)
-   (define (helper n)
-      (define (reversed-n)
-         (- (length l) n 1))
-      (define (cons-next)
-         (cons (deep-reversal (list-ref l (reversed-n))) (helper (+ n 1))))
-      (if (= n (length l)) nil (cons-next)))
-   (if (pair? l) (helper 0) l))
+(list 1 (list 2 (list 3 4))) ; (1 (2 (3 4)))
 
-(define (fringe t) 
-   (cond ((not (list? t)) (list t))
-         ((not (null? (cdr t))) (append (fringe (car t)) (fringe (cdr t))))
-         (else (fringe (car t)))))
+; The box-and-pointer structure of this tree; X signifies a pointer to the empty list, o signifies a non-empty pointer
+; -----    -----
+; |1| | -> |o|X|
+; -----    -----
+;           |
+;           v
+;          -----    -----
+;          |2|o| -> |o|X|
+;          -----    -----
+;                    |
+;                    v
+;                   -----    -----
+;                   |3|o| -> |4|X|
+;                   -----    -----
+
+; 2.25 The car and caddr operations necessary to pull out seven
+
+(car (caddr '(1 3 (5 7) 9))) ; 7
+(caar '((7))) ; 7
+(cadr (cadr (cadr (cadr (cadr (cadr '(1 (2 (3 (4 (5 (6 7))))))))))))
+
+; 2.26 Some list operations
+
+(define x (list 1 2 3))
+(define y (list 4 5 6))
+(append x y) ; (1 2 3 4 5 6)
+(cons x y)   ; ((1 2 3) 4 5 6)
+(list x y)   ; ((1 2 3) (4 5 6))
+
+; 2.27 Deep reversal
+
+; I just add a test for a pair and add a recursive call to deep-reverse on every item cons'd to the answer
+
+(define (deep-reverse items)
+  (define (iter things answer)
+    (if (null? things)
+        answer
+        (iter (cdr things)
+              (cons (deep-reverse (car things))
+                    answer))))
+  (if (pair? items)
+      (iter items '())
+      items))
+
+; 2.28 Fringe, a list of the leaves of a tree
+
+(define (fringe tree)
+  (cond ((pair? tree) (append (fringe (car tree)) (fringe (cdr tree))))
+        ((null? tree) '())
+        (else (list tree))))
+
 
 (define (make-mobile left right)
    (list left right))
