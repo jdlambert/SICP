@@ -491,49 +491,175 @@
         ((null? tree) '())
         (else (list tree))))
 
+; 2.29 Binary mobiles
 
 (define (make-mobile left right)
    (list left right))
 
 (define (make-branch length structure)
    (list length structure))
- 
+
+; a. Selectors
+
 (define (left-branch mobile)
-   (car mobile))
+  (car mobile))
+
 (define (right-branch mobile)
-   (car (cdr mobile)))
+  (cadr mobile))
+
 (define (branch-length branch)
-   (car branch))
+  (car branch))
+
 (define (branch-structure branch)
-   (car (cdr branch)))
-(define (has-mobile? branch)
-   (list? (branch-structure branch)))
-(define (branch-weight branch)
-   (if (has-mobile? branch) (total-weight (branch-structure branch))
-                            (branch-structure branch)))
-(define (total-weight mobile)
-   (+ (branch-weight (left-branch mobile)) (branch-weight (right-branch mobile))))
+  (cadr branch))
 
-(define (branch-torque branch)
-   (* (branch-length branch) (branch-weight branch)))
+; b. Total weight of a mobile
 
-(define (balanced? mobile)
-   (= (branch-torque (left-branch mobile)) (branch-torque (right-branch mobile))))
+(define mobile? list?)
 
-(define (tree-map proc tree)
-   (cond ((null? tree) nil)
-         ((not (pair? tree)) (proc tree))
-         (else (cons (tree-map proc (car tree))
-                     (tree-map proc (cdr tree))))))
+(define (total-weight structure)
+  (if (mobile? structure)
+      (+ (total-weight (branch-structure (left-branch structure)))
+         (total-weight (branch-structure (right-branch structure))))
+      structure))
+
+; c. Balanced mobile
+
+(define (torque branch)
+  (* (branch-length branch) (total-weight (branch-structure branch))))
+
+(define (balanced? structure)
+  (or (not (mobile? structure))
+      (and (= (torque (left-branch structure)) (torque (right-branch structure)))
+           (balanced? (branch-structure (left-branch structure)))
+           (balanced? (branch-structure (right-branch structure))))))
+
+; d. Different representation of mobiles
+
+; If the constructors were changed to use cons instead of list, then I would need to rewrite the following procedures:
+
+; Selectors would need to use car in place of cadr
+; mobile? would need to use pair? instead of list?A
+
+; 2.30 Two ways to write square-tree
+
+(define (square-tree tree)
+  (cond ((null? tree) ())
+        ((not (pair? tree)) (square tree))
+        (else (cons (square-tree (car tree))
+                    (square-tree (cdr tree))))))
+
+(define (square-tree tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (square-tree sub-tree)
+             (square sub-tree)))
+       tree))
+
+; 2.31 Similarly, two ways to write map-tree
+
+(define (map-tree proc tree)
+  (cond ((null? tree) ())
+        ((not (pair? tree)) (proc tree))
+        (else (cons (map-tree proc (car tree))
+                    (map-tree proc (cdr tree))))))
+
+(define (map-tree proc tree)
+  (map (lambda (sub-tree)
+         (if (pair? sub-tree)
+             (map-tree proc sub-tree)
+             (proc sub-tree)))
+       tree))
+
+; 2.32 Subsets of a set
 
 (define (subsets s)
    (if (null? s)
-       (list nil)
+       (list ())
        (let ((rest (subsets (cdr s)))) 
          (append rest (map (lambda (x) (cons (car s) x)) rest)))))
 
-;sequences as conventional interfaces
+; subsets first pushes right to the end of the list and builds a set with just the empty set [one element]
+; it then takes the current result and appends the rightmost element to each entry [two elements]
+; it then takes the current result and appends the next element to each entry [four elements]
+; in this way, it builds up all of the possible subsets of s
 
+; 2.33 List operations in terms of accumulate
+
+(define (accumulate op initial sequence)
+  (if (null? sequence)
+      initial
+      (op (car sequence)
+          (accumulate op initial (cdr sequence)))))
+
+(define (map p sequence)
+  (accumulate (lambda (x y) (cons (p x) y)) () sequence))
+
+(define (append seq1 seq2)
+  (accumulate cons seq2 seq1))
+
+(define (length sequence)
+  (accumulate (lambda (x y) (+ y 1)) 0 sequence))
+
+; 2.34 Horner's rule evaluation by accumulate
+
+(define (horner-eval x coefficient-sequence)
+  (accumulate (lambda (this-coefficient higher-terms) 
+                      (+ this-coefficient (* x higher-terms)))
+              0
+              coefficient-sequence))
+
+; 2.35 Count leaves by accumulate
+
+(define (count-leaves t)
+  (accumulate +
+              0
+              (map 
+                (lambda (l)
+                  (if (pair? l)
+                      (count-leaves l)
+                      1))
+                t)))
+
+; Enumerate the number of leaves of the subtrees (recursively), then accumulate with addition and a zero initial value
+
+; 2.36 A next-order accumulate, accumulating a list of lists into a new list
+
+(define (accumulate-n op init seqs)
+  (if (null? (car seqs))
+      ()
+      (cons (accumulate op init (map car seqs))
+            (accumulate-n op init (map cdr seqs)))))
+
+; 2.37 Matrix and vector operations
+
+; With vectors represented as lists
+; And matrices represented as lists of same-length lists
+
+(define (dot-product v w)
+  (accumulate + 0 (map * v w)))
+
+(define (matrix-*-vector m v)
+  (map (lambda (row) (dot-product row v))  m))
+
+(define (transpose-matrix mat)
+  (accumulate-n cons () mat))
+
+(define (matrix-*-matrix m n)
+  (let ((cols (transpose-matrix n)))
+    (map (lambda (row) 
+            (map (lambda (col) (dot-product row col)) cols))
+         m)))
+
+; (1 2)     (1 0)       (1st row * 1st col     1st row * 2nd col)
+;        *           =
+; (3 4)     (0 1)       (2nd row * 2nd col     2nd row * 2nd col)
+
+; So a map from a row to a row's dot product with each of the cols
+
+; 2.38 Fold-left and fold-right
+
+; Fold-right is also known as accumulate
 (define (fold-right op initial sequence)
    (if (null? sequence)
        initial
@@ -547,28 +673,19 @@
                (cdr rest))))
    (iter initial sequence))
 
-(define (enumerate-interval low high)
-   (if (> low high)
-       nil
-       (cons low (enumerate-interval (+ low 1) high))))
+(fold-right / 1 (list 1 2 3))    ; 3/2
+(fold-left / 1 (list 1 2 3))     ; 1/6
+(fold-right cons 1 (list 1 2 3)) ; (1 2 3)
+(fold-left cons 1 (list 1 2 3))  ; (((() . 1) . 2) . 3)
 
-(define (enumerate-tree tree)
-   (cond ((null? tree) nil)
-         ((not (pair? tree)) (list tree))
-         (else (append (enumerate-tree (car tree))
-                       (enumerate-tree (cdr tree))))))
+; For the results of the two directional folds to be the same, op must be commutative
 
-(define (sum-odd-squares tree)
-   (fold-right +
-               0
-               (map square
-                    (filter odd?
-                            (enumerate-tree tree)))))
+; 2.30 Sequence reversal in terms of fold left and fold right
 
-(define (fold-right-reverse sequence)
-   (fold-right (lambda (x y) (append y (list x))) nil sequence))
-(define (fold-left-reverse sequence)
-   (fold-left (lambda (x y) (append (list y) x )) nil sequence))
+(define (reverse sequence)
+   (fold-right (lambda (x y) (append y (list x))) () sequence))
+(define (reverse sequence)
+   (fold-left (lambda (x y) (append (list y) x )) () sequence))
 
 (define (flatmap proc seq)
    (fold-right append nil (map proc seq)))
