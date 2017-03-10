@@ -673,22 +673,29 @@
                (cdr rest))))
    (iter initial sequence))
 
-(fold-right / 1 (list 1 2 3))    ; 3/2
-(fold-left / 1 (list 1 2 3))     ; 1/6
-(fold-right cons 1 (list 1 2 3)) ; (1 2 3)
-(fold-left cons 1 (list 1 2 3))  ; (((() . 1) . 2) . 3)
+(fold-right / 1 (list 1 2 3))    ; 3/2 = (3/2)/1
+(fold-left / 1 (list 1 2 3))     ; 1/6 = (1/2)/3
+(fold-right cons () (list 1 2 3)) ; (1 2 3) = (1 . (2 . (3 . ())))
+(fold-left cons () (list 1 2 3))  ; (((() . 1) . 2) . 3)
 
 ; For the results of the two directional folds to be the same, op must be commutative
 
-; 2.30 Sequence reversal in terms of fold left and fold right
+; 2.39 Sequence reversal in terms of fold left and fold right
 
 (define (reverse sequence)
    (fold-right (lambda (x y) (append y (list x))) () sequence))
 (define (reverse sequence)
    (fold-left (lambda (x y) (append (list y) x )) () sequence))
 
+; Nested mappings
+
 (define (flatmap proc seq)
-   (fold-right append nil (map proc seq)))
+   (fold-right append () (map proc seq)))
+
+(define (enumerate-interval i j)
+  (if (< j i)
+      ()
+      (cons i (enumerate-interval (+ i 1) j))))
  
 (define (prime-sum? pair)
    (prime? (+ (car pair) (cadr pair))))
@@ -699,16 +706,28 @@
 (define (prime-sum-pairs n)
    (map make-pair-sum
       (filter prime-sum?
-         (unique-pairs n))))
+         (flatmap
+            (lambda (i)
+               (map (lambda (j) (list i j))
+                    (enumerate-interval 1 (- i 1))))
+            (enumerate-interval 1 n)))))
 
-(define (permutations s)
-   (if (null? s)
-      (list nil)
-      (flatmap (lambda (x)
-                  (map (lambda (p) (cons x p))
-                       (permutations (remove x s))))
-               s)))
+; 2.40 Enumeration of unique pairs less than a given integer
 
+(define (unique-pairs n)
+  (flatmap
+    (lambda (i)
+      (map (lambda (j) (list i j))
+           (enumerate-interval 1 (- i 1))))
+    (enumerate-interval 1 n)))
+
+(define (prime-sum-pairs n)
+   (map make-pair-sum
+      (filter prime-sum?
+              (unique-pairs n))))
+
+; 2.41 Enumeration of unique triplets less than a given number
+; this extension of the above just adds a second flatmap
 
 (define (unique-triplets n)
    (flatmap
@@ -721,6 +740,14 @@
             (enumerate-interval 1 (- i 1))))
       (enumerate-interval 1 n)))
 
+(define (permutations s)
+   (if (null? s)
+      ()
+      (flatmap (lambda (x)
+                  (map (lambda (p) (cons x p))
+                       (permutations (remove x s))))
+               s)))
+
 (define (sum list)
    (fold-right + 0 list))
 
@@ -729,75 +756,48 @@
       (lambda (t) (= s (sum t)))
       (unique-triplets n)))
 
-;8-queens problem
-
-(define (enumerate-zeros n)
-   (define (helper i)
-      (if (= n i)
-          nil
-          (cons 0 (helper (+ i 1)))))
-   (helper 0))
- 
-(define (enumerate-single k n)
-   (define (helper i)
-      (cond ((= n i) nil)
-            ((= k i) (cons 1 (helper (+ i 1))))
-            (else (cons 0 (helper (+ i 1))))))
-   (helper 0))
-
-(define (enumerate-zero-square-matrix n)
-   (define (helper i)
-      (if (= n i)
-          nil
-          (cons (enumerate-zeros n) (helper (+ i 1)))))
-   (helper 0))
-
-(define (index-of-one row)
-   (define (index current i)
-      (cond ((= (car current) 1) i)
-            ((null? current) nil)
-            (else (index (cdr current) (+ i 1)))))
-    (index row 0))
-
-;Queen's problem... pretty tough
+; 2.42 THE EIGHT QUEENS PUZZLE
 
 (define (queens board-size)
-
-   (define (adjoin-position new-row rest-of-queens)
-      (if (empty? rest-of-queens) (list (enumerate-single new-row board-size))
-                                  (append rest-of-queens (list (enumerate-single new-row board-size)))))
-
-   (define (empty-board)
-      (define (enum-empties n)
-         (if (= board-size n) nil
-                              (cons (list) (enum-empties (+ n 1)))))
-      (enum-empties 0))
-
-   
-   (define (safe? k positions)
-      (let ([tar (index-of-one (list-ref positions (- k 1)))])
-         (define (row-good? row i)
-            (let ([cur (index-of-one row)]
-                  [diff (- k i 1)])
-                  (not (or (= cur tar) (= cur (- tar diff)) (= cur (+ tar diff))))))
-         (define (check-board board i)
-            (cond  [(= k (+ i 1)) #t]
-                   [(not (row-good? (car board) i)) #f]
-                   [else (check-board (cdr board) (+ i 1))]))
-         (check-board positions 0)))
-
-   (define (queen-cols k)
-      (if (= k 0)
-        (empty-board)
+  (define (queen-cols k)
+    (if (= k 0)
+        ()
         (filter
-            (lambda (positions) (safe? k positions))
-            (flatmap
-               (lambda (rest-of-queens)
-                  (map (lambda (new-row)
-                           (adjoin-position new-row rest-of-queens))
-                       (enumerate-interval 0 (- board-size 1))))
-               (queen-cols (- k 1))))))
-   (queen-cols board-size))
+          (lambda (positions) (safe? k positions))
+          (flatmap
+            (lambda (rest-of-queens)
+              (map (lambda (new-row)
+                     (adjoin-position new-row rest-of-queens))
+                   (enumerate-interval 1 board-size)))
+            (queen-cols (- k 1))))))
+  (queen-cols board-size))
+
+(define (adjoin-position new-row rest-of-queens)
+  (append rest-of-queens (nth-col new-row (length (car rest-of-queens)))))
+
+(define (nth-col k len)
+  (define (helper j)
+    (cond ((= j len) ())
+          ((= j k) (cons 1 (helper (+ 1 j))))
+          (else (cons 0 (helper (+ 1 j))))))
+  (helper 0))
+
+(define (safe? k positions) ; Still not functioning properly
+  (let ((kth-pos (index-of-one (list-ref positions k))))
+    (define (safe-queen? current)
+      (not (= kth-pos (index-of-one current))))
+    (define (helper-safe? current)
+      (or (null? current)
+          (and (safe-queen? (car current))
+               (helper-safe? (cdr current)))))
+    (helper-safe? positions)))
+  
+(define (index-of-one position)
+  (define (helper current index)
+    (if (= 1 (car current))
+        index
+        (helper (cdr current) (+ 1 index))))
+  (helper position 0))
 
 (define (deriv exp var)
    (cond [(number? exp) 0]
