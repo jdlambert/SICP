@@ -760,17 +760,17 @@
 
 (define (queens board-size)
 
-  (define (adjoin-position new-row rest-of-queens)
-    (cons new-row rest-of-queens))
+  (define adjoin-position cons)
 
   (define (safe? positions)
     (let ((initial (car positions)))
       (define (iter current i)
         (or (null? current)
-            (and (not (or (= (car current) (+ initial i))
-                          (= (car current) initial)
-                          (= (car current) (- initial i))))
-                 (iter (cdr current) (+ 1 i)))))
+            (let ((pos (car current)))
+              (and (not (or (= pos (+ initial i))
+                            (= pos initial)
+                            (= pos (- initial i))))
+                   (iter (cdr current) (+ 1 i))))))
       (iter (cdr positions) 1)))
 
   (define (queen-cols k)
@@ -786,6 +786,11 @@
           (queen-cols (- k 1))))))
 
   (queen-cols board-size))
+
+; I really overthought this one. I started with a representation using lists of lists. The lists had all zeros except where a 
+; queen was placed, which had a one. This required a lot of auxiliary procedures, and was algorithmically far from ideal.
+
+; Once I realized that everything could be dispensed of except for the numeric position of the queen, I flew through the problem.
 
 
 (define (deriv exp var)
