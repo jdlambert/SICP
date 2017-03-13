@@ -759,45 +759,34 @@
 ; 2.42 THE EIGHT QUEENS PUZZLE
 
 (define (queens board-size)
+
+  (define (adjoin-position new-row rest-of-queens)
+    (cons new-row rest-of-queens))
+
+  (define (safe? positions)
+    (let ((initial (car positions)))
+      (define (iter current i)
+        (or (null? current)
+            (and (not (or (= (car current) (+ initial i))
+                          (= (car current) initial)
+                          (= (car current) (- initial i))))
+                 (iter (cdr current) (+ 1 i)))))
+      (iter (cdr positions) 1)))
+
   (define (queen-cols k)
     (if (= k 0)
-        ()
-        (filter
-          (lambda (positions) (safe? k positions))
-          (flatmap
-            (lambda (rest-of-queens)
-              (map (lambda (new-row)
-                     (adjoin-position new-row rest-of-queens))
-                   (enumerate-interval 1 board-size)))
-            (queen-cols (- k 1))))))
+      (list ())
+      (filter
+        safe?
+        (flatmap
+          (lambda (rest-of-queens)
+             (map (lambda (new-row)
+                    (adjoin-position new-row rest-of-queens))
+                  (enumerate-interval 1 board-size)))
+          (queen-cols (- k 1))))))
+
   (queen-cols board-size))
 
-(define (adjoin-position new-row rest-of-queens)
-  (append rest-of-queens (nth-col new-row (length (car rest-of-queens)))))
-
-(define (nth-col k len)
-  (define (helper j)
-    (cond ((= j len) ())
-          ((= j k) (cons 1 (helper (+ 1 j))))
-          (else (cons 0 (helper (+ 1 j))))))
-  (helper 0))
-
-(define (safe? k positions) ; Still not functioning properly
-  (let ((kth-pos (index-of-one (list-ref positions k))))
-    (define (safe-queen? current)
-      (not (= kth-pos (index-of-one current))))
-    (define (helper-safe? current)
-      (or (null? current)
-          (and (safe-queen? (car current))
-               (helper-safe? (cdr current)))))
-    (helper-safe? positions)))
-  
-(define (index-of-one position)
-  (define (helper current index)
-    (if (= 1 (car current))
-        index
-        (helper (cdr current) (+ 1 index))))
-  (helper position 0))
 
 (define (deriv exp var)
    (cond [(number? exp) 0]
