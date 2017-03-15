@@ -781,9 +781,9 @@
 (define (smooth function)
   (let ((dx 0.001))
     (lambda (x)
-            (/ (+ (- x dx)
-                  x
-                  (+ x dx))
+            (/ (+ (function (- x dx))
+                  (function x)
+                  (function (+ x dx)))
                3))))
 
 (define (n-fold-smooth function n)
