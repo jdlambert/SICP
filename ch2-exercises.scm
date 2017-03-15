@@ -790,8 +790,67 @@
 ; I really overthought this one. I started with a representation using lists of lists. The lists had all zeros except where a 
 ; queen was placed, which had a one. This required a lot of auxiliary procedures, and was algorithmically far from ideal.
 
-; Once I realized that everything could be dispensed of except for the numeric position of the queen, I flew through the problem.
+; Once I realized that everything could be dispensed of except for the numeric position of the queen, the problem became quite a bit easier.
+; The following board position is represented as (0 1 2 3 4 5 6 7)
 
+; Q 0 0 0 0 0 0 0
+; 0 Q 0 0 0 0 0 0
+; 0 0 Q 0 0 0 0 0
+; 0 0 0 Q 0 0 0 0
+; 0 0 0 0 Q 0 0 0
+; 0 0 0 0 0 Q 0 0
+; 0 0 0 0 0 0 Q 0
+; 0 0 0 0 0 0 0 Q
+
+; This makes adjoin-position simply cons. By keeping the most recent move at the head of the list, safe? is also greatly simplified.
+
+; A PICTURE LANGUAGE
+
+; SECTION 2.3: SYMBOLIC DATA
+
+; 2.53 Quotations and lists
+
+(list 'a 'b 'c) ; (a b c)
+(list (list 'george)) ; ((george))
+(cdr '((x1 x2) (y1 y2))) ; ((y1 y2))
+(cadr '((x1 x2) (y1 y2))) ; (y1 y2)
+(pair? (car '(a short list))) ; #f
+(memq 'red '((red shoes) (blue socks))) ; #f, not found, since memq does not recurse into sublists
+(memq 'red '(red shoes blue socks)) ; (red shoes blue socks)
+
+; 2.54 Defining equal? in terms of eq?
+
+(define (equal? l1 l2)
+  (fold-right (lambda (x y) (and x y))
+              #t
+              (map eq? l1 l2))) 
+
+; This is pretty, but it isn't optimal since it doesn't short-circuit
+; I learned here that and is not an ordinary function, must be a special form.
+; That makes sense, short-circuiting and it status as a special form must be linked
+
+; Here's a version of equal that's a bit more efficient, though a bit less conceptually beautiful:
+
+(define (equal? l1 l2)
+  (or (and (null? l1) (null? l2))
+      (and (eq? (car l1) (car l2))
+           (equal? (cdr l1) (cdr l2)))))
+
+; 2.55
+
+(car ''abacadabra) ; quote
+
+; Why does this statement evaluate to quote?
+; ' is shorthand for quote, a special form that quotes the next expression
+; The first quote causes the second quote expression to be quoted, it could also be written as
+
+(car (quote (quote abacadabra)))
+
+(quote (quote abacadabra)) ; ('quote 'abacadabra)
+
+(car (list ('quote 'abacadabra))) ; 'quote
+
+; DERIVATIVES
 
 (define (deriv exp var)
    (cond [(number? exp) 0]
@@ -806,11 +865,6 @@
                              (deriv (multiplicand exp) var))
                (make-product (deriv (multiplier exp) var)
                              (multiplicand exp)))]
-         [(exponent? exp)
-            (make-product 
-               (make-product (power exp) (make-exponent (base exp) (- (power exp) 1)))
-               (deriv (base exp) var))]
-               
          [else
            (error "unknown expression type --- DERIV" exp)]))
 
@@ -840,13 +894,7 @@
          [(=number? m2 1) m1]
          [(and (number? m1) (number? m2)) (* m1 m2)]
          [else (list '* m1 m2)]))
-(define (make-exponent b p)
-   (cond [(=number? p 0) 1]
-         [(or (=number? p 1) (=number? b 1) (=number? b 0)) b]
-         [(and (number? b) (number? m2)) (** b p)]
-         [else (list '** b p)]))
 
-(define (** b p) ((repeated (lambda (x) (* b x)) (- p 1)) 1))
 (define (sum? x) (and (pair? x) (eq? (car x) '+)))
 (define (addend s) (cadr s))
 (define (augend s) 
