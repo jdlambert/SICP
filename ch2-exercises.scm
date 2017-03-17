@@ -1008,7 +1008,7 @@
 ; union-set is greatly simplified
 (define (union-set set1 set2)
   (append set1 set2))
-
+\
 ; intersection-set is unchanged
 
 ; This sort of set implementation might be effective when many adjoins and unions are necessary,
@@ -1298,23 +1298,37 @@
               (encode (cdr message) tree))))
 
 (define (encode-symbol symbol tree)
-  (define (element-of-set? x set)
+  (define (element-of-set? set)
     (and (not (null? set))
-         (or (eq? x (car set))
-             (element-of-set? x (cdr set)))))
-  (define (correct-branch? branch)
-    (element-of-set? symbol (symbols branch)))
+         (or (eq? symbol (car set))
+             (element-of-set? (cdr set)))))
+  (define (has-symbol? tree)
+    (element-of-set? (symbols tree)))
   (define (recurse current)
     (if (leaf? current)
         ()
         (let ((lb (left-branch current))
               (rb (right-branch current)))
-             (cond ((correct-branch? lb)
-                        (cons 0 (recurse lb)))
-                   ((correct-branch? rb)
-                        (cons 1 (recurse rb)))
-                   (else (display "symbol not present in tree"))))))
-  (recurse tree))
+             (if (has-symbol? lb) 
+                 (cons 0 (recurse lb))
+                 (cons 1 (recurse rb))))))
+  (if (has-symbol? tree)
+      (recurse tree)
+      (display "ERROR: symbol not present in tree!")))
 
 ; The encoding works. I'm able to get my sample message back from the sample output, by means of the sample tree.
 
+; 2.69 Generating a Huffman tree, given symbol-frequency pairs
+
+(define (generate-huffman-tree pairs)
+  (successive-merge (make-leaf-set pairs)))
+
+; make-leaf-set was defined in the book and is listed above
+
+; 2.70 A practical example with "symbols" that aren't individual letters
+
+; 2.71 Generalized Huffman codes for alphabets of n symbols
+
+; 2.72 Order of growth in encoding a symbol
+
+; SECTION 2.4: MULTIPLE REPRESENTATIONS OF ABSTRACT DATA
