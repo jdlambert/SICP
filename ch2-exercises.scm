@@ -1,5 +1,7 @@
 ;CHAPTER TWO: BUILDING ABSTRACTIONS WITH DATA
 
+; To revisit: Picture language, 2.58b
+
 ; SECTION 2.1: Introduction to Data Abstraction
 
 ;2.1 rational number datatype with sign checking
@@ -959,6 +961,8 @@
 (define (exponentiation? ex) (and (pair? ex) (eq? (cadr ex) '**)))
 (define base car)
 (define exponent caddr)
+
+; 2.58 b
 
 ; SETS
 
