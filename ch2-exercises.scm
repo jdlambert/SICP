@@ -964,7 +964,11 @@
 
 ; 2.58 b
 
+; This problem is significantly harder than the others, I hope to revisit it soon
+
 ; SETS
+
+; Unordered list representation of sets
 
 (define (element-of-set? x set) 
    (cond ((null? set) false)
@@ -983,6 +987,7 @@
                 (intersection-set (cdr set1) set2)))
          (else (intersection-set (cdr set1) set2))))
 
+; 2.59 Unordered list set union
 
 (define (union-set set1 set2)
    (cond ((null? set1) set2)
@@ -990,92 +995,106 @@
          ((not (element-of-set? (car set1) set2))
           (cons (car set1)
                 (union-set (cdr set1) set2)))
-         (else (union-set (cdr set1) set2))))
+         (else (union-set (cdr set5) set2))))
 
-(define (element-of-set-multi? x set) 
-   (cond ((null? set) false)
-         ((equal? x (car set)) true)
-         (else (element-of-set-multi? x (cdr set)))))
+; 2.60 Still unordered lists, but now duplicates are allowed
 
-(define (adjoin-set-multi x set)
+; element-of-set? is unchanged
+
+; adjoin set simply bypasses the element-of-set? test
+(define (adjoin-set x set)
        (cons x set))
 
-(define (intersection-set-multi set1 set2)
-   (cond ((or (null? set1) (null? set2)) '())
-         ((element-of-set-multi? (car set1) set2)
-          (cons (car set1)
-                (intersection-set-multi (cdr set1) set2)))
-         (else (intersection-set-multi (cdr set1) set2))))
+; union-set is greatly simplified
+(define (union-set set1 set2)
+  (append set1 set2))
 
+; intersection-set is unchanged
 
-(define (union-set-multi set1 set2)
-   (cond ((null? set1) set2)
-         ((null? set2) set1)
-         ((not (element-of-set-multi? (car set1) set2))
-          (cons (car set1)
-                (union-set-multi (cdr set1) set2)))
-         (else (union-set-multi (cdr set1) set2))))
+; This sort of set implementation might be effective when many adjoins and unions are necessary,
+; but not many intersections or element-of-set?s are used, as the former two procedures are much quicker here,
+; while the latter two will fall behind if many elements are repeated
 
-(define (intersection-set-ordered set1 set2)
+; Ordered lists
+
+; Intersection is greatly optimized
+
+(define (intersection-set set1 set2)
    (if (or (null? set1) (null? set2))
        '()
-       (let ((x1 (car set1)) [x2 (car set2)])
+       (let ((x1 (car set1)) (x2 (car set2)))
          (cond ((= x1 x2)
                 (cons x1
-                      (intersection-set-ordered (cdr set1)
+                      (intersection-set (cdr set1)
                                                 (cdr set2))))
                ((< x1 x2)
-                (intersection-set-ordered (cdr set1) set2))
+                (intersection-set (cdr set1) set2))
                ((> x1 x2)
-                (intersection-set-ordered set1 (cdr set2)))))))
+                (intersection-set set1 (cdr set2)))))))
 
-(define (adjoin-set-ordered x set)
+; 2.61 Adjoin-set and element-of-set?, making use of the ordering
+
+(define (adjoin-set x set)
    (if (null? set)
-       x
+       (cons x ())
        (let ((y (car set)))
-         (cond ((= x y) (cdr set))
-               ((< x y) (adjoin-set-ordered (cdr set)))
-               ((> x y) (cons x (cdr set)))))))
+         (cond ((> x y) (cons y (adjoin-set x (cdr set))))
+               ((< x y) (cons x set))
+               (else set)))))
 
  
-(define (element-of-set?-ordered x set)
-   (if (null? set)
-       false
-       (let ((y (car set)))
-         (cond ((= x y) true)
-               ((< x y) (element-of-set?-ordered (cdr set)))
-               ((> x y) false)))))
+(define (element-of-set? x set)
+    (and (not (null? set))
+         (let ((y (car set)))
+              (or (= x y) (and (< x y) (element-of-set? (cdr set)))))))
 
-(define (union-set-ordered set1 set2)
+; 2.62 Union-set is a THETA(n) operation when making use of ordering
+
+(define (union-set set1 set2)
    (cond ((null? set1) set2)
          ((null? set2) set1)
          (else
-            (let ((x1 (car set1)) [x2 (car set2)])
+            (let ((x1 (car set1)) (x2 (car set2)))
              (cond ((= x1 x2)
                       (cons x1
-                         (union-set-ordered (cdr set1)
+                         (union-set (cdr set1)
                                                 (cdr set2))))
                    ((< x1 x2)
-                     (cons x1 (union-set-ordered (cdr set1) set2)))
+                     (cons x1 (union-set (cdr set1) set2)))
                    ((> x1 x2)
-                     (cons x2 (union-set-ordered set1 (cdr set2))))))]))
+                     (cons x2 (union-set set1 (cdr set2)))))))))
+
+; Sets as binary trees, an optimization beyond ordering
 
 (define (entry tree) (car tree))
 (define (left-branch tree) (cadr tree))
-(define (right-branch tree) (caddr tre))
+(define (right-branch tree) (caddr tree))
 (define (make-tree entry left right) (list entry left right))
 
-(define (element-of-set?-tree x set)
+(define (element-of-set? x set)
    (cond ((null? set) false)
-         ((= x (entry set)) true)
-         ((< x (entry set)
+         ((= x (entry set)) #t)
+         ((< x (entry set)) (element-of-set? x (left-branch set)))
+         ((> x (entry set)) (element-of-set? x (right-branch set)))))
+
+(define (adjoin-set x set)
+   (cond ((null? set) (make-tree x () ()))
+         ((= x (entry set)) set)
+         ((< x (entry set)) 
             (make-tree (entry set)
                        (adjoin-set x (left-branch set))
-                       (right-branch set))))
+                       (right-branch set)))
          ((> x (entry set))
             (make-tree (entry set)
                        (left-branch set)
                        (adjoin-set x (right-branch set))))))
+
+; Dot-tail notation multiple adjoin
+
+(define (adjoin-multi s . x)
+  (fold-left (lambda (set entry) (adjoin-set entry set))
+              s
+              x))
 
 (define (tree->list-1 tree)
    (if (null? tree)
