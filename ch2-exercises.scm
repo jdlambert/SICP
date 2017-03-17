@@ -1096,12 +1096,14 @@
               s
               x))
 
+; 2.63 Two different procedures for tree-to-list conversion
+
 (define (tree->list-1 tree)
    (if (null? tree)
       '()
       (append (tree->list-1 (left-branch tree))
               (cons (entry tree)
-                    (tree-list-1 (right-branch-tree))))))
+                    (tree->list-1 (right-branch tree))))))
 
 (define (tree->list-2 tree)
    (define (copy-to-list tree result-list)
@@ -1112,6 +1114,11 @@
                               (copy-to-list (right-branch tree)
                                             result-list)))))
    (copy-to-list tree '()))
+
+; The two methods return the same values for all trees, but the first is less optimal,
+; since it uses append, which is an O(N) operation, to build its tree, rather than cons, which is a constant time operation
+
+; 2.64 List -> balanced tree constructor
 
 (define (list->tree elements)
    (car (partial-tree elements (length elements))))
@@ -1131,7 +1138,65 @@
                                  (remaining-elts (cdr right-result)))
                                 (cons (make-tree this-entry left-tree right-tree)
                                       remaining-elts))))))))
+; A:
 
+; partial-tree makes a balanced tree from a given list, with a given number of elements
+; it first begins by stripping off half the total elements to form a left partial tree, which is formed by a recursive call
+; the first of the remaining non-left elements becomes the root element
+; the remaining elements become the right partial tree
+
+; there are two base cases, the explicit null set for n = 0 and the implicit case in which n = 1, so left-size and right size are both 0
+; These two base cases work to form the leaves of the tree, and everything else is built recursively up from them
+
+; I've never really seen an algorithm like this, I think it's a beautiful example of a functional algorithm
+; It's not that hard to read, but I don't like that there is an implicit base case, for which many of the steps are unnecessary
+; For example, there could be a second case:
+
+(if (= n 1) (cons (list (car elts) () ()) (cdr elts)) ...)
+
+; 2.65 union-set and intersection-set for balanced binary trees
+
+; I did the same thing for both union and intersection:
+; Tear down the trees into ordered lists ( O(N) )
+; Find the union/intersection of the two lists ( O(N) )
+; Build a new tree ( O(N) )
+; The resulting procedure is thus also O(N)
+
+(define (union-set tree1 tree2)
+  
+  (define (union-list set1 set2)
+     (cond ((null? set1) set2)
+           ((null? set2) set1)
+           (else
+              (let ((x1 (car set1)) (x2 (car set2)))
+               (cond ((= x1 x2)
+                        (cons x1
+                           (union-list (cdr set1)
+                                                  (cdr set2))))
+                     ((< x1 x2)
+                       (cons x1 (union-list (cdr set1) set2)))
+                     ((> x1 x2)
+                       (cons x2 (union-list set1 (cdr set2)))))))))
+
+  (list->tree (union-list (tree->list-2 tree1)
+                          (tree->list-2 tree2))))
+(define (intersection-set tree1 tree2)
+
+  (define (intersection-list set1 set2)
+     (if (or (null? set1) (null? set2))
+         '()
+         (let ((x1 (car set1)) (x2 (car set2)))
+           (cond ((= x1 x2)
+                  (cons x1
+                        (intersection-list (cdr set1)
+                                                  (cdr set2))))
+                 ((< x1 x2)
+                  (intersection-list (cdr set1) set2))
+                 ((> x1 x2)
+                  (intersection-list set1 (cdr set2)))))))
+
+  (list-tree (intersection-list (tree->list-2 tree1)
+                                (tree->list-2 tree2))))
 
 ;Huffman encoding & decoding
 
