@@ -579,9 +579,9 @@
        (let ((rest (subsets (cdr s)))) 
          (append rest (map (lambda (x) (cons (car s) x)) rest)))))
 
-; subsets first pushes right to the end of the list and builds a set with just the empty set [one element]
-; it then takes the current result and appends the rightmost element to each entry [two elements]
-; it then takes the current result and appends the next element to each entry [four elements]
+; subsets first pushes right to the end of the list and builds a set with just the empty set (one element)
+; it then takes the current result and appends the rightmost element to each entry (two elements)
+; it then takes the current result and appends the next element to each entry (four elements)
 ; in this way, it builds up all of the possible subsets of s
 
 ; 2.33 List operations in terms of accumulate
@@ -829,14 +829,14 @@
 ; I learned here that and is not an ordinary function, must be a special form.
 ; That makes sense, short-circuiting and it status as a special form must be linked
 
-; Here's a version of equal that's a bit more efficient, though a bit less conceptually beautiful:
+; Here's a version of equal that's a bit more efficient, but which uses explicit recursion rather than list operations:
 
 (define (equal? l1 l2)
   (or (and (null? l1) (null? l2))
       (and (eq? (car l1) (car l2))
            (equal? (cdr l1) (cdr l2)))))
 
-; 2.55
+; 2.55 Quoting quotes
 
 (car ''abacadabra) ; quote
 
@@ -850,23 +850,28 @@
 
 (car (list ('quote 'abacadabra))) ; 'quote
 
-; DERIVATIVES
+; 2.56-2.58 DERIVATIVES
 
 (define (deriv exp var)
-   (cond [(number? exp) 0]
-         [(variable? exp)
-            (if (same-variable? exp var) 1 0)]
-         [(sum? exp)
+   (cond ((number? exp) 0)
+         ((variable? exp)
+            (if (same-variable? exp var) 1 0))
+         ((sum? exp)
             (make-sum (deriv (addend exp) var)
-                      (deriv (augend exp) var))]
-         [(product? exp)
+                      (deriv (augend exp) var)))
+         ((product? exp)
             (make-sum
                (make-product (multiplier exp)
                              (deriv (multiplicand exp) var))
                (make-product (deriv (multiplier exp) var)
-                             (multiplicand exp)))]
-         [else
-           (error "unknown expression type --- DERIV" exp)]))
+                             (multiplicand exp))))
+         ((exponentiation? exp)
+            (make-product (make-product (exponent exp)
+                                        (make-exponentiation (base exp)
+                                                             (make-sum (exponent exp) -1)))
+                          (deriv (base exp) var)))
+         (else
+           (error "unknown expression type --- DERIV" exp))))
 
 (define (variable? x) (symbol? x))
 (define (same-variable? v1 v2)
@@ -875,46 +880,92 @@
    (and (number? exp) (= exp num)))
 
 (define (make-sum a1 a2) 
-   (cond [(=number? a1 0) a2]
-         [(=number? a2 0) a1]
-         [(and (number? a1) (number? a2)) (+ a1 a2)]
-         [else (list '+ a1 a2)]))
-
-(define (make-multi-sum a1 a2)
-   (if (empty? (cdr a2)) (make-sum a1 (car a2))
-                         (make-sum a1 (make-multi-sum (car a2) (cdr a2)))))
-(define (make-multi-product m1 m2)
-   (if (empty? (cdr m2)) (make-product m1 (car m2))
-                         (make-product m1 (make-multi-product (car m2) (cdr m2)))))
-         
+   (cond ((=number? a1 0) a2)
+         ((=number? a2 0) a1)
+         ((and (number? a1) (number? a2)) (+ a1 a2))
+         (else (list '+ a1 a2))))
 
 (define (make-product m1 m2)
-   (cond [(or (=number? m1 0) (=number? m2 0)) 0]
-         [(=number? m1 1) m2]
-         [(=number? m2 1) m1]
-         [(and (number? m1) (number? m2)) (* m1 m2)]
-         [else (list '* m1 m2)]))
+   (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+         ((=number? m1 1) m2)
+         ((=number? m2 1) m1)
+         ((and (number? m1) (number? m2)) (* m1 m2))
+         (else (list '* m1 m2))))
 
 (define (sum? x) (and (pair? x) (eq? (car x) '+)))
 (define (addend s) (cadr s))
 (define (augend s) 
-   (if (empty? (cdddr s)) 
+  (if (null? (cdddr s))
       (caddr s)
-      (make-multi-sum (caddr s) (cdddr s))))
+      (make-sum (caddr s) (augend (cdr s)))))
+
 (define (product? x) (and (pair? x) (eq? (car x) '*)))
 (define (multiplier p) (cadr p))
 (define (multiplicand s) 
-   (if (empty? (cdddr s)) 
+  (if (null? (cdddr s))
       (caddr s)
-      (make-multi-product (caddr s) (cdddr s))))
-(define (exponent? x) (and (pair? x) (eq? (car x) '**)))
-(define (base e) (cadr e))
-(define (power e) (caddr e))
+      (make-product (caddr s) (multiplicand (cdr s)))))
+
+(define (exponentiation? ex) (and (pair? ex) (eq? (car ex) '**)))
+(define base cadr)
+(define exponent caddr)
+(define (make-exponentiation base exponent)
+  (cond ((= exponent 1) base)
+        ((= exponent 0) 1)
+        (else (list '** base exponent))))
+
+; 2.58 a
+
+; Changing from scheme's prefix operators to typical infix operators is quite easy, given that the expressions are fully parenthesized and
+; each operator only takes two arguments
+
+; The derivative program doesn't need to be modified, and the predicates, selectors, and constructors only need slight modification
+; I've modified the procedures related to sums below, with annotations
+
+(define (make-sum a1 a2) 
+   (cond ((=number? a1 0) a2)
+         ((=number? a2 0) a1)
+         ((and (number? a1) (number? a2)) (+ a1 a2))
+         (else (list a1 '+ a2)))) ; Reorder the elements to reflect our infix operator
+
+(define (sum? x) (and (pair? x) (eq? (cadr x) '+))) ; the test for '+ and the selector for the addend have switched, this one is now cadr
+(define (addend s) (car s))                         ; this one is now car, it was previously cadr
+(define (augend s) 
+  (if (null? (cdddr s))
+      (caddr s)
+      (make-sum (caddr s) (augend (cdr s)))))
+
+; The following are the modified infix forms of the rest of the package, without annotation
+
+(define (make-product m1 m2)
+   (cond ((or (=number? m1 0) (=number? m2 0)) 0)
+         ((=number? m1 1) m2)
+         ((=number? m2 1) m1)
+         ((and (number? m1) (number? m2)) (* m1 m2))
+         (else (list m1 '* m2))))
+
+(define (product? x) (and (pair? x) (eq? (cadr x) '*)))
+(define (multiplier p) (car p))
+(define (multiplicand s) 
+  (if (null? (cdddr s))
+      (caddr s)
+      (make-product (caddr s) (multiplicand (cdr s)))))
+
+(define (make-exponentiation base exponent)
+  (cond ((= exponent 1) base)
+        ((= exponent 0) 1)
+        (else (list base '** exponent))))
+
+(define (exponentiation? ex) (and (pair? ex) (eq? (cadr ex) '**)))
+(define base car)
+(define exponent caddr)
+
+; SETS
 
 (define (element-of-set? x set) 
-   (cond [(null? set) false]
-         [(equal? x (car set)) true]
-         [else (element-of-set? x (cdr set))]))
+   (cond ((null? set) false)
+         ((equal? x (car set)) true)
+         (else (element-of-set? x (cdr set)))))
 
 (define (adjoin-set x set)
    (if (element-of-set? x set)
@@ -922,88 +973,88 @@
        (cons x set)))
 
 (define (intersection-set set1 set2)
-   (cond [(or (null? set1) (null? set2)) '()]
-         [(element-of-set? (car set1) set2)
+   (cond ((or (null? set1) (null? set2)) '())
+         ((element-of-set? (car set1) set2)
           (cons (car set1)
-                (intersection-set (cdr set1) set2))]
-         [else (intersection-set (cdr set1) set2)]))
+                (intersection-set (cdr set1) set2)))
+         (else (intersection-set (cdr set1) set2))))
 
 
 (define (union-set set1 set2)
-   (cond [(null? set1) set2]
-         [(null? set2) set1]
-         [(not (element-of-set? (car set1) set2))
+   (cond ((null? set1) set2)
+         ((null? set2) set1)
+         ((not (element-of-set? (car set1) set2))
           (cons (car set1)
-                (union-set (cdr set1) set2))]
-         [else (union-set (cdr set1) set2)]))
+                (union-set (cdr set1) set2)))
+         (else (union-set (cdr set1) set2))))
 
 (define (element-of-set-multi? x set) 
-   (cond [(null? set) false]
-         [(equal? x (car set)) true]
-         [else (element-of-set-multi? x (cdr set))]))
+   (cond ((null? set) false)
+         ((equal? x (car set)) true)
+         (else (element-of-set-multi? x (cdr set)))))
 
 (define (adjoin-set-multi x set)
        (cons x set))
 
 (define (intersection-set-multi set1 set2)
-   (cond [(or (null? set1) (null? set2)) '()]
-         [(element-of-set-multi? (car set1) set2)
+   (cond ((or (null? set1) (null? set2)) '())
+         ((element-of-set-multi? (car set1) set2)
           (cons (car set1)
-                (intersection-set-multi (cdr set1) set2))]
-         [else (intersection-set-multi (cdr set1) set2)]))
+                (intersection-set-multi (cdr set1) set2)))
+         (else (intersection-set-multi (cdr set1) set2))))
 
 
 (define (union-set-multi set1 set2)
-   (cond [(null? set1) set2]
-         [(null? set2) set1]
-         [(not (element-of-set-multi? (car set1) set2))
+   (cond ((null? set1) set2)
+         ((null? set2) set1)
+         ((not (element-of-set-multi? (car set1) set2))
           (cons (car set1)
-                (union-set-multi (cdr set1) set2))]
-         [else (union-set-multi (cdr set1) set2)]))
+                (union-set-multi (cdr set1) set2)))
+         (else (union-set-multi (cdr set1) set2))))
 
 (define (intersection-set-ordered set1 set2)
    (if (or (null? set1) (null? set2))
        '()
-       (let ([x1 (car set1)] [x2 (car set2)])
-         (cond [(= x1 x2)
+       (let ((x1 (car set1)) [x2 (car set2)])
+         (cond ((= x1 x2)
                 (cons x1
                       (intersection-set-ordered (cdr set1)
-                                                (cdr set2)))]
-               [(< x1 x2)
-                (intersection-set-ordered (cdr set1) set2)]
-               [(> x1 x2)
-                (intersection-set-ordered set1 (cdr set2))]))))
+                                                (cdr set2))))
+               ((< x1 x2)
+                (intersection-set-ordered (cdr set1) set2))
+               ((> x1 x2)
+                (intersection-set-ordered set1 (cdr set2)))))))
 
 (define (adjoin-set-ordered x set)
    (if (null? set)
        x
-       (let ([y (car set)])
-         (cond [(= x y) (cdr set)]
-               [(< x y) (adjoin-set-ordered (cdr set))]
-               [(> x y) (cons x (cdr set))]))))
+       (let ((y (car set)))
+         (cond ((= x y) (cdr set))
+               ((< x y) (adjoin-set-ordered (cdr set)))
+               ((> x y) (cons x (cdr set)))))))
 
  
 (define (element-of-set?-ordered x set)
    (if (null? set)
        false
-       (let ([y (car set)])
-         (cond [(= x y) true]
-               [(< x y) (element-of-set?-ordered (cdr set))]
-               [(> x y) false]))))
+       (let ((y (car set)))
+         (cond ((= x y) true)
+               ((< x y) (element-of-set?-ordered (cdr set)))
+               ((> x y) false)))))
 
 (define (union-set-ordered set1 set2)
-   (cond [(null? set1) set2]
-         [(null? set2) set1]
-         [else
-            (let ([x1 (car set1)] [x2 (car set2)])
-             (cond [(= x1 x2)
+   (cond ((null? set1) set2)
+         ((null? set2) set1)
+         (else
+            (let ((x1 (car set1)) [x2 (car set2)])
+             (cond ((= x1 x2)
                       (cons x1
                          (union-set-ordered (cdr set1)
-                                                (cdr set2)))]
-                   [(< x1 x2)
-                     (cons x1 (union-set-ordered (cdr set1) set2))]
-                   [(> x1 x2)
-                     (cons x2 (union-set-ordered set1 (cdr set2)))]))]))
+                                                (cdr set2))))
+                   ((< x1 x2)
+                     (cons x1 (union-set-ordered (cdr set1) set2)))
+                   ((> x1 x2)
+                     (cons x2 (union-set-ordered set1 (cdr set2))))))]))
 
 (define (entry tree) (car tree))
 (define (left-branch tree) (cadr tree))
@@ -1011,16 +1062,16 @@
 (define (make-tree entry left right) (list entry left right))
 
 (define (element-of-set?-tree x set)
-   (cond [(null? set) false]
-         [(= x (entry set)) true]
-         [(< x (entry set)
+   (cond ((null? set) false)
+         ((= x (entry set)) true)
+         ((< x (entry set)
             (make-tree (entry set)
                        (adjoin-set x (left-branch set))
-                       (right-branch set)))]
-         [(> x (entry set))
+                       (right-branch set))))
+         ((> x (entry set))
             (make-tree (entry set)
                        (left-branch set)
-                       (adjoin-set x (right-branch set)))]))
+                       (adjoin-set x (right-branch set))))))
 
 (define (tree->list-1 tree)
    (if (null? tree)
@@ -1045,16 +1096,16 @@
 (define (partial-tree elts n)
    (if (= n 0)
        (cons '() elts)
-       (let ([left-size (quotient (- n 1) 2)])
-            (let ([left-result (partial-tree elts left-size)])
-                 (let ([left-tree (car left-result)]
-                          [non-left-elts (cdr left-result)]
-                          [right-size (- n (+ left-size 1))])
-                      (let ([this-entry (car non-left-elts)]
-                            [right-result (partial-tree (cdr non-left-elts)
-                                                        right-size)])
-                           (let ([right-tree (car right-result)]
-                                 [remaining-elts (cdr right-result)])
+       (let ((left-size (quotient (- n 1) 2)))
+            (let ((left-result (partial-tree elts left-size)))
+                 (let ((left-tree (car left-result))
+                          (non-left-elts (cdr left-result))
+                          (right-size (- n (+ left-size 1))))
+                      (let ((this-entry (car non-left-elts))
+                            (right-result (partial-tree (cdr non-left-elts)
+                                                        right-size)))
+                           (let ((right-tree (car right-result))
+                                 (remaining-elts (cdr right-result)))
                                 (cons (make-tree this-entry left-tree right-tree)
                                       remaining-elts))))))))
 
@@ -1089,8 +1140,8 @@
    (define (decode-1 bits current-branch)
       (if (null? bits)
           '()
-          (let ([next-branch
-                 (choose-branch (car bits) current-branch)])
+          (let ((next-branch
+                 (choose-branch (car bits) current-branch)))
                (if (leaf? next-branch) 
                    (cons (symbol-leaf next-branch)
                          (decode-1 (cdr bits) tree))
@@ -1098,9 +1149,9 @@
    (decode-1 bits tree))
 
 (define (choose-branch bit branch)
-   (cond [(= bit 0) (left-branch branch)]
-         [(= bit 1) (right-branch branch)]
-         [else (error "bad bit --CHOOSE-BRANCH" bit)]))
+   (cond ((= bit 0) (left-branch branch))
+         ((= bit 1) (right-branch branch))
+         (else (error "bad bit --CHOOSE-BRANCH" bit))))
 
 (define (add x y) (apply-generic 'add x y))
 (define (sub x y) (apply-generic 'sub x y))
