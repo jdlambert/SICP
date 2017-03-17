@@ -1154,6 +1154,11 @@
 
 (if (= n 1) (cons (list (car elts) () ()) (cdr elts)) ...)
 
+; B: 
+
+; partial-tree is called once for every element in the list (plus one quick, insignificant n=0 case twice at each leaf)
+; There's no other scaling here, the growth is of order of magnitude O(N)
+
 ; 2.65 union-set and intersection-set for balanced binary trees
 
 ; I did the same thing for both union and intersection:
@@ -1195,8 +1200,21 @@
                  ((> x1 x2)
                   (intersection-list set1 (cdr set2)))))))
 
-  (list-tree (intersection-list (tree->list-2 tree1)
+  (list->tree (intersection-list (tree->list-2 tree1)
                                 (tree->list-2 tree2))))
+
+; 2.66 Lookup in a binary tree, ordered by the numerical values of the key
+
+(define make-key-entry cons)
+(define key car)
+(define entry cdr)
+
+(define (lookup given-key set-of-records)
+  (and (not (null? set-of-records)) 
+      (let ((current (key (car set-of-records))))
+        (cond ((equal? given-key current) (entry (car set-of-records)))
+              ((< given-key current) (lookup given-key (left-branch set-of-records)))
+              (else (lookup-given-key (right-branch set-of-records))))))
 
 ;Huffman encoding & decoding
 
@@ -1207,7 +1225,7 @@
 (define (symbol-leaf x) (cadr x))
 (define (weight-leaf x) (caddr x))
 
-(define (make-code-tree left  right)
+(define (make-code-tree left right)
    (list left
          right
          (append (symbols left) (symbols right))
@@ -1241,22 +1259,62 @@
          ((= bit 1) (right-branch branch))
          (else (error "bad bit --CHOOSE-BRANCH" bit))))
 
-(define (add x y) (apply-generic 'add x y))
-(define (sub x y) (apply-generic 'sub x y))
-(define (mul x y) (apply-generic 'mul x y))
-(define (div x y) (apply-generic 'div x y))
+(define (adjoin-set x set)
+  (cond ((null? set) (list x))
+        ((< (weight x) (weight (car set))) (cons x set))
+        (else (cons (car set)
+                    (adjoin-set x (cdr set))))))
 
-(define (install-scheme-number-package)
-   (define (tag x)
-      (attach-tag 'scheme-number x))
-   (put 'add '(scheme-number scheme-number)
-        (lambda (x y) (tag (+ x y))))
-   (put 'mul '(scheme-number scheme-number)
-        (lambda (x y) (tag (* x y))))
-   (put 'div '(scheme-number scheme-number)
-        (lambda (x y) (tag (/ x y))))
-   (put 'sub '(scheme-number scheme-number)
-        (lambda (x y) (tag (- x y))))
-   (put 'make 'scheme-number
-        (lambda (x) (tag x)))
-   'done)
+(define (make-leaf-set pairs)
+  (if (null? pairs)
+      ()
+      (let ((pair (car pairs)))
+        (adjoin-set (make-leaf (car pair)   ; symbol
+                               (cadr pair)) ; frequency
+                    (make-leaf-set (cdr pairs))))))
+
+; 2.67 A sample message
+
+(define sample-tree
+  (make-code-tree 
+       (make-leaf 'A 4)
+       (make-code-tree
+            (make-leaf 'B 2)
+            (make-code-tree (make-leaf 'D 1)
+                            (make-leaf 'C 2)))))
+
+(define sample-message '(0 1 1 0 0 1 0 1 0 1 1 1 0))
+
+; The decoding procedure comes straight from the book, and is listed above. Here it is in action:
+
+(decode sample-message sample-tree) ; (a d a b b c a)
+
+; 2.68 Encoding a message
+
+(define (encode message tree)
+  (if (null? message)
+      ()
+      (append (encode-symbol (car message) tree)
+              (encode (cdr message) tree))))
+
+(define (encode-symbol symbol tree)
+  (define (element-of-set? x set)
+    (and (not (null? set))
+         (or (eq? x (car set))
+             (element-of-set? x (cdr set)))))
+  (define (correct-branch? branch)
+    (element-of-set? symbol (symbols branch)))
+  (define (recurse current)
+    (if (leaf? current)
+        ()
+        (let ((lb (left-branch current))
+              (rb (right-branch current)))
+             (cond ((correct-branch? lb)
+                        (cons 0 (recurse lb)))
+                   ((correct-branch? rb)
+                        (cons 1 (recurse rb)))
+                   (else (display "symbol not present in tree"))))))
+  (recurse tree))
+
+; The encoding works. I'm able to get my sample message back from the sample output, by means of the sample tree.
+
