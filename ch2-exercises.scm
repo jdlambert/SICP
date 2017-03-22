@@ -1,6 +1,6 @@
 ;CHAPTER TWO: BUILDING ABSTRACTIONS WITH DATA
 
-; To revisit: Picture language, 2.58b
+; To revisit: Picture language, 2.58b, 69-72
 
 ; SECTION 2.1: Introduction to Data Abstraction
 
@@ -1332,3 +1332,41 @@
 ; 2.72 Order of growth in encoding a symbol
 
 ; SECTION 2.4: MULTIPLE REPRESENTATIONS OF ABSTRACT DATA
+
+(define (attach-tag type-tag contents)
+  (cons type-tag contents))
+
+(define (type-tag datum)
+  (if (pair? datum)
+      (car datum)
+      (error "Bad tagged datum -- TYPE-TAG" datum)))
+
+(define (contents datum)
+  (if (pair? datum)
+      (cdr datum)
+      (error "Bad tagged datum -- CONTENTS" datum)))
+
+(define (apply-generic op . args)
+  (let ((type-tags (map type-tag args)))
+    (let ((proc (get op type-tags)))
+      (if proc
+        (apply proc (map contents args))
+        (error
+          "No methods for these types -- APPLY-GENERIC"
+          (list op type-tags))))))
+
+; 2.73 Refactoring the derivative package to use tagged data
+
+(define (deriv exp var)
+  (cond ((number? exp) 0)
+        ((variable? exp) (if (same-variable? exp var) 1 0))
+        (else ((get 'deriv (operator exp)) (operands exp) var))))
+
+(define (operator exp) (car exp))
+(define (operands exp) (cdr exp))
+
+; A. The predicates for number and variable can't be consolidated into the tagged-data else statement because
+; they are scheme primitives
+
+; B.
+    
