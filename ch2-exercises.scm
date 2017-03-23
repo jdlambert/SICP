@@ -1366,7 +1366,39 @@
 (define (operands exp) (cdr exp))
 
 ; A. The predicates for number and variable can't be consolidated into the tagged-data else statement because
-; they are scheme primitives
+; they are scheme primitives, not pairs, and thus can't be split using the operator and operands selectors
 
-; B.
-    
+; B. 
+
+; I think a new implementation of make-sum is appropriate here
+
+(define (make-sum operands)
+  (let ((filtered (filter (lambda (term) (not (eq? 0 term)))
+                          operands)))
+       (let ((len (length filtered)))
+         (cond ((= 0 len) 0)
+               ((= 1 len) (car filtered))
+               (else (cons '+ filtered))))))
+
+(define (deriv-sum operands var)
+    (make-sum (map (lambda (op) (deriv op var)) 
+                   operands)))
+
+(put 'deriv '+ deriv-sum)
+
+(define (make-product operands))
+
+(define (deriv-product operands var)
+    (make-sum (make-product 
+
+(put 'deriv '* deriv-product)
+
+; 2.74 Decentralized employee file representation
+
+; 2.75 Message-passing constructors
+
+; 2.76 Difference between the three strategies: generic operations with explicit dispatch, data-directed style, and message-passing style
+
+; SECTION 2.5: SYSTEMS WITH GENERIC OPERATIONS
+
+
