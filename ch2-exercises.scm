@@ -1386,10 +1386,21 @@
 
 (put 'deriv '+ deriv-sum)
 
-(define (make-product operands))
+(define (make-product operands)
+  (if (memq 0 operands)
+      0
+      (let* ((filtered (filter (lambda (x) (not (eq? 1 x)))
+                              operands))
+             (len (length filtered)))
+             (cond ((= 0 len) 1)
+                   ((= 1 len) (car filtered))
+                   (else (cons '* filtered))))))
 
 (define (deriv-product operands var)
-    (make-sum (make-product 
+    (make-sum (make-product (cons (deriv (car operands) var) 
+                                  (cdr operands)))
+              (make-product (cons (car operands)
+                                  (deriv (make-product (cdr operands)) var))))
 
 (put 'deriv '* deriv-product)
 
