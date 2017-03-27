@@ -1,12 +1,16 @@
 ;CHAPTER THREE : MODULARITY, OBJECTS, AND STATE
 
-;3.1
+;SECTION 3.1: ASSIGNMENT AND LOCAL STATE
+
+;3.1 A simple object with state
+
 (define (make-accumulator total)
    (lambda (amount)
       (begin (set! total (+ amount total)))
              total))
 
-;3.2
+;3.2 Monitoring how many times a function is called
+
 (define (make-monitored f)
    (let ((count 0))
       (define (how-many-calls?) count)
@@ -17,7 +21,8 @@
                (else (begin (set! count (+ 1 count)) (f m)))))
       dispatch))
 
-;3.3 & 3.4
+;3.3 & 3.4 A more developed make-account
+
 (define (make-account balance password)
    (let ((error-count 0))
       (define (withdraw amount)
@@ -45,7 +50,8 @@
                                        m))))))
       dispatch))
 
-;3.5
+;3.5 Some bas
+
 (define (rand-0-to-1) (/ (random 100000000) 100000000.0))
 (define (rand-interval a b) (+ a (* (- b a) (rand-0-to-1))))
 

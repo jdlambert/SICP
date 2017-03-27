@@ -1370,7 +1370,8 @@
 
 ; B. 
 
-; I think a new implementation of make-sum is appropriate here
+; I think new implementations of make-sum and make-product are appropriate here
+; I've made the procedures take a list of operands in a more natural way
 
 (define (make-sum operands)
   (let ((filtered (filter (lambda (term) (not (eq? 0 term)))
